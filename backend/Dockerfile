@@ -40,5 +40,5 @@ EXPOSE 3000
 ENV NODE_ENV=production
 
 # Run migrations and start app directly to minimize memory overhead
-CMD ["sh", "-c", "./node_modules/.bin/prisma migrate deploy && node dist/src/main"]
+CMD ["sh", "-c", "./node_modules/.bin/prisma migrate deploy && node dist/main"]
 
