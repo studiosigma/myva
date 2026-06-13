@@ -15,12 +15,23 @@ import { AIModule } from '../modules/ai/ai.module';
     BullModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        connection: {
-          host: configService.get<string>('REDIS_HOST') || 'localhost',
-          port: configService.get<number>('REDIS_PORT') || 6379,
-        },
-      }),
+      useFactory: (configService: ConfigService) => {
+        const host = configService.get<string>('REDIS_HOST') || 'localhost';
+        const port = Number(configService.get<any>('REDIS_PORT')) || 6379;
+        const password = configService.get<string>('REDIS_PASSWORD') || undefined;
+        
+        // Enable TLS for cloud Redis providers like Upstash (non-local)
+        const isLocal = host === 'localhost' || host === '127.0.0.1' || host === 'redis';
+        
+        return {
+          connection: {
+            host,
+            port,
+            password,
+            ...(isLocal ? {} : { tls: {} }),
+          },
+        };
+      },
     }),
     BullModule.registerQueue(
       { name: 'reminder_queue' },
