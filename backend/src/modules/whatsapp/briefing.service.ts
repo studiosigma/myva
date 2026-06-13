@@ -84,7 +84,7 @@ ${taskList}
 
 Format dengan bahasa Indonesia yang alami, berikan motivasi singkat untuk memulai hari, dan gunakan format markdown WhatsApp (seperti bold menggunakan bintang *text*).`;
 
-    const briefingText = await this.aiService.chat(userId, prompt);
+    const briefingText = await this.aiService.chat([{ role: 'user', content: prompt }], user.persona);
     return briefingText;
   }
 
@@ -162,7 +162,7 @@ Nama tugas penting: "${taskTitle}"
 
 Format pesan menggunakan bahasa Indonesia yang ramah, langsung pada sasaran, dan gunakan bold dengan bintang *text* khas WhatsApp.`;
 
-    return this.aiService.chat(userId, prompt);
+    return this.aiService.chat([{ role: 'user', content: prompt }], user.persona);
   }
 
   async checkAndSendFollowUps(): Promise<void> {

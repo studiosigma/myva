@@ -5,37 +5,83 @@ import { PrismaService } from '../../database/prisma.service';
 
 @Injectable()
 export class AIService {
-  private readonly openai: OpenAI;
+  private readonly geminiApiKey: string;
   private readonly logger = new Logger(AIService.name);
 
   constructor(
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
   ) {
-    const apiKey = this.configService.get<string>('OPENAI_API_KEY') || 'mock-api-key';
-    this.openai = new OpenAI({ apiKey });
+    this.geminiApiKey = this.configService.get<string>('GEMINI_API_KEY') || '';
   }
 
   async chat(messages: OpenAI.Chat.ChatCompletionMessageParam[], persona?: string): Promise<string> {
     try {
-      let finalMessages = [...messages];
-      if (persona) {
-        const systemPrompt = this.getPersonaSystemPrompt(persona);
-        // Prepend persona system prompt
-        finalMessages = [
-          { role: 'system', content: systemPrompt },
-          ...finalMessages,
-        ];
+      const apiKey = this.geminiApiKey;
+      if (!apiKey) {
+        throw new Error('GEMINI_API_KEY is not configured.');
       }
 
-      const response = await this.openai.chat.completions.create({
-        model: this.configService.get<string>('OPENAI_CHAT_MODEL') || 'gpt-4o-mini',
-        messages: finalMessages,
-        temperature: 0.7,
+      let finalMessages = [...messages];
+      
+      // Filter out system instructions
+      const systemMessages = finalMessages.filter(m => m.role === 'system');
+      const chatMessages = finalMessages.filter(m => m.role !== 'system');
+
+      let systemInstructionText = systemMessages.map(m => m.content).join('\n');
+      if (persona) {
+        const personaPrompt = this.getPersonaSystemPrompt(persona);
+        systemInstructionText = systemInstructionText 
+          ? `${personaPrompt}\n\n${systemInstructionText}`
+          : personaPrompt;
+      }
+
+      // Convert messages to Gemini format (user and model roles)
+      const contents = chatMessages.map(m => {
+        const role = m.role === 'assistant' ? 'model' : 'user';
+        const text = typeof m.content === 'string' ? m.content : '';
+        return {
+          role,
+          parts: [{ text }]
+        };
       });
-      return response.choices[0]?.message?.content || 'No response from assistant.';
+
+      // If contents is empty, add a default user part to satisfy the API
+      if (contents.length === 0) {
+        contents.push({
+          role: 'user',
+          parts: [{ text: 'Hello' }]
+        });
+      }
+
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+      const payload: any = {
+        contents,
+      };
+
+      if (systemInstructionText) {
+        payload.system_instruction = {
+          parts: [{ text: systemInstructionText }]
+        };
+      }
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Gemini API responded with status ${response.status}: ${response.statusText}`);
+      }
+
+      const data = (await response.json()) as any;
+      const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      return textResponse || 'No response from assistant.';
     } catch (error) {
-      this.logger.error(`OpenAI Chat Error: ${error.message}`);
+      this.logger.error(`Gemini Chat Error: ${error.message}`);
       return `[AI Error]: Could not generate chat response.`;
     }
   }
@@ -54,6 +100,11 @@ export class AIService {
 
   async summarize(content: string): Promise<{ title?: string; summary: string; keyPoints: string[]; actions: string[] }> {
     try {
+      const apiKey = this.geminiApiKey;
+      if (!apiKey) {
+        throw new Error('GEMINI_API_KEY is not configured.');
+      }
+
       const prompt = `
         Analyze and summarize the following document content.
         Provide the response in JSON format with exactly four fields:
@@ -66,14 +117,32 @@ export class AIService {
         ${content}
       `;
 
-      const response = await this.openai.chat.completions.create({
-        model: this.configService.get<string>('OPENAI_CHAT_MODEL') || 'gpt-4o-mini',
-        messages: [{ role: 'user', content: prompt }],
-        response_format: { type: 'json_object' },
-        temperature: 0.3,
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+      const payload = {
+        contents: [
+          {
+            parts: [{ text: prompt }]
+          }
+        ],
+        generationConfig: {
+          responseMimeType: 'application/json',
+        },
+      };
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
       });
 
-      const jsonStr = response.choices[0]?.message?.content || '{}';
+      if (!response.ok) {
+        throw new Error(`Gemini API responded with status ${response.status}: ${response.statusText}`);
+      }
+
+      const data = (await response.json()) as any;
+      const jsonStr = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
       const parsed = JSON.parse(jsonStr);
       return {
         title: parsed.title || '',
@@ -82,7 +151,7 @@ export class AIService {
         actions: parsed.actions || [],
       };
     } catch (error) {
-      this.logger.error(`OpenAI Summary Error: ${error.message}`);
+      this.logger.error(`Gemini Summary Error: ${error.message}`);
       return {
         title: '',
         summary: 'Error summarizing document.',
@@ -94,15 +163,36 @@ export class AIService {
 
   async generateEmbedding(text: string): Promise<number[]> {
     try {
-      const response = await this.openai.embeddings.create({
-        model: 'text-embedding-3-small',
-        input: text,
+      const apiKey = this.geminiApiKey;
+      if (!apiKey) {
+        throw new Error('GEMINI_API_KEY is not configured.');
+      }
+
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${apiKey}`;
+      const payload = {
+        content: {
+          parts: [{ text }]
+        }
+      };
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
       });
-      return response.data[0].embedding;
+
+      if (!response.ok) {
+        throw new Error(`Gemini API responded with status ${response.status}: ${response.statusText}`);
+      }
+
+      const data = (await response.json()) as any;
+      return data.embedding?.values || Array(768).fill(0);
     } catch (error) {
-      this.logger.error(`OpenAI Embedding Error: ${error.message}`);
+      this.logger.error(`Gemini Embedding Error: ${error.message}`);
       // Fallback dummy embedding vector
-      return Array(1536).fill(0);
+      return Array(768).fill(0);
     }
   }
 
@@ -240,8 +330,8 @@ export class AIService {
     audioBuffer: Buffer,
     mimeType: string,
   ): Promise<{ transcription: string; summary: string }> {
-    const geminiKey = this.configService.get<string>('GEMINI_API_KEY');
-    if (!geminiKey || geminiKey === 'your-gemini-api-key-here') {
+    const geminiKey = this.geminiApiKey;
+    if (!geminiKey) {
       this.logger.warn('GEMINI_API_KEY is not configured. Falling back to mock transcription.');
       return {
         transcription: 'Ini adalah transkripsi simulasi karena GEMINI_API_KEY belum dikonfigurasi.',
@@ -307,3 +397,4 @@ export class AIService {
     }
   }
 }
+
