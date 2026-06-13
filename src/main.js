@@ -334,7 +334,16 @@ function renderDashboard() {
   // Update Hero values
   const greetingEl = document.querySelector('.hero-greeting');
   if (greetingEl) {
-    greetingEl.textContent = `Good Morning, ${state.profile.username} 👋`;
+    const hour = new Date().getHours();
+    let greeting = 'Good Morning';
+    if (hour >= 12 && hour < 17) {
+      greeting = 'Good Afternoon';
+    } else if (hour >= 17 && hour < 22) {
+      greeting = 'Good Evening';
+    } else if (hour >= 22 || hour < 4) {
+      greeting = 'Good Night';
+    }
+    greetingEl.textContent = `${greeting}, ${state.profile.username} 👋`;
   }
 
   const activeReminders = state.reminders.filter(r => !r.completed);
