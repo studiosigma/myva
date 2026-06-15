@@ -4307,6 +4307,12 @@ const initializeApp = async () => {
   initRouter();
   initEventListeners();
   syncSidebarProfile();
+
+  // Dynamically set Google OAuth login URL based on API_BASE_URL
+  const googleLoginBtn = document.getElementById('btn-google-login');
+  if (googleLoginBtn) {
+    googleLoginBtn.href = `${API_BASE_URL}/api/auth/google`;
+  }
 };
 
 if (document.readyState === 'loading') {
