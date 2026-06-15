@@ -2661,6 +2661,88 @@ function initEventListeners() {
     });
   }
 
+  // --- Landing Use Cases Switcher ---
+  const ucTabBtns = document.querySelectorAll('.uc-tab-btn');
+  const ucMockupChatBody = document.getElementById('uc-mockup-chat-body');
+
+  const useCaseMockData = {
+    memory: `
+      <div class="chat-bubble outgoing">
+        <span>Naiva, tolong simpan link ini untuk referensi nanti: https://notion.so/project-abc</span>
+        <div class="chat-bubble-time">09:15 <span class="read-receipt">✓✓</span></div>
+      </div>
+      <div class="chat-bubble incoming">
+        <span>Link referensi proyek telah disimpan ke Memory Bank kamu dengan tag #referensi. Panggil kapan saja dengan ketik "cari referensi" ya! 🧠</span>
+        <div class="chat-bubble-time">09:16</div>
+      </div>
+    `,
+    reminder: `
+      <div class="chat-bubble outgoing">
+        <span>Ingetin meeting ama klien besok jam 10 pagi, trus tolong kirim briefing ke WA saya jam 8 pagi.</span>
+        <div class="chat-bubble-time">14:20 <span class="read-receipt">✓✓</span></div>
+      </div>
+      <div class="chat-bubble incoming">
+        <span>Agenda dicatat! 🗓️<br><br><b>1. Meeting Klien:</b> Besok jam 10.00.<br><b>2. Harian Briefing:</b> Akan dikirim ke WhatsApp Anda besok jam 08.00 pagi.</span>
+        <div class="chat-bubble-time">14:21</div>
+      </div>
+    `,
+    file: `
+      <div class="chat-bubble outgoing">
+        <span>[📄 PDF: Laporan_Keuangan_Q2.pdf] Tolong ringkas poin-poin penting dari laporan ini.</span>
+        <div class="chat-bubble-time">11:05 <span class="read-receipt">✓✓</span></div>
+      </div>
+      <div class="chat-bubble incoming">
+        <span>Berdasarkan analisis file <b>Laporan_Keuangan_Q2.pdf</b>:<br><br>• Pendapatan naik 12% YoY.<br>• Biaya operasional terpangkas 5%.<br>• Margin bersih meningkat jadi 18%.<br><br>Laporan lengkap siap dikirim atau disimpan ke Google Drive.</span>
+        <div class="chat-bubble-time">11:06</div>
+      </div>
+    `,
+    finance: `
+      <div class="chat-bubble outgoing">
+        <span>Pengeluaran makan siang hari ini 45 ribu</span>
+        <div class="chat-bubble-time">13:10 <span class="read-receipt">✓✓</span></div>
+      </div>
+      <div class="chat-bubble incoming">
+        <span>Dicatat! 💸 Pengeluaran <b>Rp 45.000</b> kategori <b>Makanan & Minuman</b> berhasil dimasukkan. Total pengeluaran bulan ini: Rp 1.420.000 (Sisa budget Anda aman).</span>
+        <div class="chat-bubble-time">13:11</div>
+      </div>
+    `
+  };
+
+  if (ucTabBtns.length > 0 && ucMockupChatBody) {
+    ucTabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        ucTabBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const target = btn.getAttribute('data-uc-target');
+        const chatContent = useCaseMockData[target];
+        if (chatContent) {
+          ucMockupChatBody.innerHTML = chatContent;
+        }
+      });
+    });
+  }
+
+  // --- Landing FAQ Accordion ---
+  const faqQuestions = document.querySelectorAll('.faq-question');
+  if (faqQuestions.length > 0) {
+    faqQuestions.forEach(q => {
+      q.addEventListener('click', () => {
+        const item = q.closest('.faq-item');
+        if (item) {
+          // Close other items
+          document.querySelectorAll('.faq-item').forEach(other => {
+            if (other !== item) {
+              other.classList.remove('active');
+            }
+          });
+          // Toggle current item
+          item.classList.toggle('active');
+        }
+      });
+    });
+  }
+
   // Sidebar router links click
   document.querySelectorAll('.nav-item, .bottom-nav-item').forEach(el => {
     el.addEventListener('click', (e) => {

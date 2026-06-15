@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   </head>
   <body>
-    <div id="app" class="app-layout">
+    <div id="app" class="app-layout landing-active">
       <!-- Sidebar Navigation (Desktop) -->
       <aside class="sidebar">
         <div class="sidebar-header">
@@ -109,9 +109,8 @@
         <!-- View Section Containers -->
         <!-- View Section Containers -->
         <div class="content-body" id="view-container">
-          
-          <!-- 0. LANDING PAGE VIEW -->
-          <section id="view-landing" class="view-section">
+                   <!-- 0. LANDING PAGE VIEW -->
+          <section id="view-landing" class="view-section active">
             <!-- Landing Navigation -->
             <nav class="landing-nav">
               <div class="landing-nav-container">
@@ -121,9 +120,11 @@
                 </div>
                 <div class="landing-nav-links">
                   <a href="#view-landing" class="landing-nav-link">Home</a>
-                  <a href="#landing-features" class="landing-nav-link">Fitur Utama</a>
-                  <a href="#landing-integrations" class="landing-nav-link">Integrasi</a>
-                  <a href="#landing-steps" class="landing-nav-link">Cara Kerja</a>
+                  <a href="#landing-use-cases" class="landing-nav-link">Use Cases</a>
+                  <a href="#landing-solutions" class="landing-nav-link">Solusi</a>
+                  <a href="#landing-features" class="landing-nav-link">Fitur</a>
+                  <a href="#landing-pricing" class="landing-nav-link">Harga</a>
+                  <a href="#landing-faq" class="landing-nav-link">FAQ</a>
                 </div>
                 <a href="#dashboard" class="landing-btn-cta">Buka Dashboard</a>
               </div>
@@ -134,18 +135,18 @@
               <div class="landing-hero-grid">
                 <div class="landing-hero-text">
                   <div class="landing-badge">
-                    <span class="landing-badge-dot"></span> WhatsApp Second Brain
+                    <span class="landing-badge-dot"></span> WhatsApp Personal Assistant
                   </div>
                   <h1 class="landing-hero-title">
-                    Asisten AI Pribadi <br/>
-                    <span class="gradient-text">Di WhatsApp Anda</span>
+                    Punya Asisten Pribadi AI <br/>
+                    <span class="gradient-text">Selalu Aktif di WhatsApp</span>
                   </h1>
                   <p class="landing-hero-desc">
-                    NAIVA menghubungkan WhatsApp Anda menjadi "Second Brain". Catat pengeluaran keuangan, jadwalkan tugas harian, simpan memori penting, dan terima briefing pagi secara otomatis lewat chat biasa.
+                    Catat tugas, simpan memori, kelola keuangan, jadwalkan aktivitas, dan dapatkan briefing harian langsung dari chat WhatsApp Anda. Berfungsi sebagai Second Brain pribadi untuk hidup dan pekerjaan Anda.
                   </p>
                   <div class="landing-hero-actions">
-                    <a href="#dashboard" class="landing-btn-primary">Mulai Sekarang</a>
-                    <a href="#landing-features" class="landing-btn-secondary">Tinjau Fitur Resmi</a>
+                    <a href="#signup" class="landing-btn-primary">Hubungkan WhatsApp Gratis</a>
+                    <a href="#landing-use-cases" class="landing-btn-secondary">Lihat Demo</a>
                   </div>
                 </div>
 
@@ -162,34 +163,28 @@
                       </span>
                     </div>
                     <div class="mockup-header">
-                      <div class="mockup-back-btn">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                      </div>
                       <div class="mockup-avatar">🤖</div>
                       <div class="mockup-user-info">
                         <span class="mockup-username">NAIVA AI</span>
                         <span class="mockup-status">online</span>
                       </div>
-                      <div class="mockup-actions">
-                        <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" width="18" height="18"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 9.72v3z"></path></svg>
-                      </div>
                     </div>
                     <div class="mockup-chat-body-landing">
                       <div class="chat-date-separator"><span>HARI INI</span></div>
                       <div class="chat-bubble outgoing">
-                        <span>Catat pengeluaran 75rb makan siang</span>
+                        <span>Catat pengeluaran makan siang 75 ribu</span>
                         <div class="chat-bubble-time">12:30 <span class="read-receipt">✓✓</span></div>
                       </div>
                       <div class="chat-bubble incoming">
-                        <span>Catatan Keuangan: Pengeluaran sebesar Rp75.000 untuk "makan siang" telah berhasil dicatat. 📝</span>
+                        <span>Pengeluaran sebesar Rp75.000 untuk "makan siang" berhasil dicatat ke keuangan Anda. 📝</span>
                         <div class="chat-bubble-time">12:30</div>
                       </div>
                       <div class="chat-bubble outgoing">
-                        <span>Ingatkan rapat besok jam 10 pagi</span>
+                        <span>Ingatkan rapat besok jam 10</span>
                         <div class="chat-bubble-time">12:32 <span class="read-receipt">✓✓</span></div>
                       </div>
                       <div class="chat-bubble incoming">
-                        <span>Pengingat Ditambahkan: "Rapat" dijadwalkan besok pada pukul 10:00 WIB. Saya akan mengirimkan briefing di pagi hari! ⏰</span>
+                        <span>Sudah saya jadwalkan dan akan mengingatkan Anda. Rapat dijadwalkan pada pukul 10:00 WIB. ⏰</span>
                         <div class="chat-bubble-time">12:32</div>
                       </div>
                     </div>
@@ -197,6 +192,149 @@
                 </div>
               </div>
             </header>
+
+            <!-- Social Proof Section -->
+            <section id="landing-social-proof" class="landing-social-proof">
+              <div class="social-proof-container">
+                <div class="sp-stats-grid">
+                  <div class="sp-stat-card">
+                    <span class="sp-stat-number">1.200+</span>
+                    <span class="sp-stat-label">Tugas Tersimpan</span>
+                  </div>
+                  <div class="sp-stat-card">
+                    <span class="sp-stat-number">500+</span>
+                    <span class="sp-stat-label">Briefing Harian Dikirim</span>
+                  </div>
+                  <div class="sp-stat-card">
+                    <span class="sp-stat-number">98%</span>
+                    <span class="sp-stat-label">Pengguna Aktif Mingguan</span>
+                  </div>
+                </div>
+                <div class="sp-logos-divider">
+                  <span>Terintegrasi dengan platform favorit Anda</span>
+                </div>
+                <div class="sp-logos-list">
+                  <span class="sp-logo-item">💬 WhatsApp</span>
+                  <span class="sp-logo-item">📅 Google Calendar</span>
+                  <span class="sp-logo-item">✉️ Gmail</span>
+                  <span class="sp-logo-item">💾 Google Drive</span>
+                  <span class="sp-logo-item">👤 Google Contacts</span>
+                </div>
+              </div>
+            </section>
+
+            <!-- Use Cases Section -->
+            <section id="landing-use-cases" class="landing-use-cases-sec">
+              <div class="landing-sec-header">
+                <div class="landing-badge">
+                  <span class="landing-badge-dot"></span> Demo Interaktif
+                </div>
+                <h2 class="landing-sec-title">Apa yang Bisa Dilakukan NAIVA?</h2>
+                <p class="landing-sec-desc">Pilih salah satu use case di bawah untuk melihat bagaimana NAIVA membantu mengelola kehidupan Anda langsung dari aplikasi chat sehari-hari.</p>
+              </div>
+
+              <div class="use-cases-container">
+                <div class="use-cases-nav">
+                  <button class="uc-tab-btn active" data-uc-target="memory">
+                    <span class="uc-tab-icon">🧠</span>
+                    <div class="uc-tab-text">
+                      <span class="uc-tab-title">Memory Second Brain</span>
+                      <span class="uc-tab-desc">Simpan fakta penting harian Anda.</span>
+                    </div>
+                  </button>
+                  <button class="uc-tab-btn" data-uc-target="reminder">
+                    <span class="uc-tab-icon">⏰</span>
+                    <div class="uc-tab-text">
+                      <span class="uc-tab-title">Reminder Aktivitas</span>
+                      <span class="uc-tab-desc">Jadwalkan rapat dan pengingat.</span>
+                    </div>
+                  </button>
+                  <button class="uc-tab-btn" data-uc-target="file">
+                    <span class="uc-tab-icon">📄</span>
+                    <div class="uc-tab-text">
+                      <span class="uc-tab-title">File Analysis</span>
+                      <span class="uc-tab-desc">Ringkas & analisis file PDF/teks.</span>
+                    </div>
+                  </button>
+                  <button class="uc-tab-btn" data-uc-target="finance">
+                    <span class="uc-tab-icon">💸</span>
+                    <div class="uc-tab-text">
+                      <span class="uc-tab-title">Financial Tracker</span>
+                      <span class="uc-tab-desc">Catat pengeluaran instan.</span>
+                    </div>
+                  </button>
+                </div>
+
+                <div class="use-cases-mockup">
+                  <div class="whatsapp-mockup-landing small-mockup">
+                    <div class="mockup-header">
+                      <div class="mockup-avatar">🤖</div>
+                      <div class="mockup-user-info">
+                        <span class="mockup-username">NAIVA AI</span>
+                        <span class="mockup-status">online</span>
+                      </div>
+                    </div>
+                    <div class="mockup-chat-body-landing" id="uc-mockup-chat-body">
+                      <!-- Default: Memory -->
+                      <div class="chat-bubble outgoing">
+                        <span>Nama istri saya Rina</span>
+                        <div class="chat-bubble-time">10:00 <span class="read-receipt">✓✓</span></div>
+                      </div>
+                      <div class="chat-bubble incoming">
+                        <span>Baik, catatan disimpan. Saya akan mengingat bahwa nama istri Anda adalah Rina. 🧠</span>
+                        <div class="chat-bubble-time">10:00</div>
+                      </div>
+                      <div class="chat-bubble outgoing">
+                        <span>Siapa nama istri saya?</span>
+                        <div class="chat-bubble-time">10:01 <span class="read-receipt">✓✓</span></div>
+                      </div>
+                      <div class="chat-bubble incoming">
+                        <span>Nama istri Anda adalah Rina. ✨</span>
+                        <div class="chat-bubble-time">10:01</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Integrations Section -->
+            <section id="landing-integrations" class="landing-integrations-sec">
+              <div class="landing-sec-header">
+                <div class="landing-badge">
+                  <span class="landing-badge-dot"></span> Google Workspace Sync
+                </div>
+                <h2 class="landing-sec-title">Integrasi Resmi Google & Gmail</h2>
+                <p class="landing-sec-desc">Hubungkan asisten virtual Anda dengan layanan digital penting untuk sinkronisasi otomatis. Alasan utama efisiensi kerja tanpa batas.</p>
+              </div>
+
+              <div class="landing-integrations-grid">
+                <!-- Calendar -->
+                <div class="l-integration-card">
+                  <div class="l-int-icon">📅</div>
+                  <h4>Google Calendar</h4>
+                  <p>Sinkronisasi tugas harian dan acara langsung ke kalender Anda.</p>
+                </div>
+                <!-- Drive -->
+                <div class="l-integration-card">
+                  <div class="l-int-icon">💾</div>
+                  <h4>Google Drive</h4>
+                  <p>Akses dan ringkas file Anda secara langsung dari folder Drive.</p>
+                </div>
+                <!-- Contacts -->
+                <div class="l-integration-card">
+                  <div class="l-int-icon">👤</div>
+                  <h4>Google Contacts</h4>
+                  <p>Kelola kontak relasi Anda langsung melalui integrasi asisten.</p>
+                </div>
+                <!-- Gmail -->
+                <div class="l-integration-card">
+                  <div class="l-int-icon">✉️</div>
+                  <h4>Gmail</h4>
+                  <p>Membaca ringkasan email penting harian Anda tanpa membuka inbox.</p>
+                </div>
+              </div>
+            </section>
 
             <!-- Features Grid Section -->
             <section id="landing-features" class="landing-features-sec">
@@ -249,6 +387,61 @@
                 </div>
               </div>
             </section>
+
+            <!-- Target Audience (Solutions) Section -->
+            <section id="landing-solutions" class="landing-solutions-sec">
+              <div class="landing-sec-header">
+                <div class="landing-badge">
+                  <span class="landing-badge-dot"></span> Solusi Produktivitas
+                </div>
+                <h2 class="landing-sec-title">Cocok untuk Siapa NAIVA?</h2>
+                <p class="landing-sec-desc">Asisten pribadi fleksibel yang dirancang untuk mendukung berbagai gaya kerja dan tujuan produktivitas.</p>
+              </div>
+
+              <div class="solutions-grid">
+                <!-- Freelancer -->
+                <div class="solution-card">
+                  <div class="sol-icon">🎯</div>
+                  <h3 class="sol-title">Freelancer</h3>
+                  <ul class="sol-list">
+                    <li>Kelola deadline tugas proyek</li>
+                    <li>Simpan catatan klien cepat</li>
+                    <li>Lacak waktu & invoice prioritas</li>
+                  </ul>
+                </div>
+                <!-- UMKM -->
+                <div class="solution-card">
+                  <div class="sol-icon">🏢</div>
+                  <h3 class="sol-title">UMKM</h3>
+                  <ul class="sol-list">
+                    <li>Catat transaksi pengeluaran langsung</li>
+                    <li>Reminder agenda bisnis otomatis</li>
+                    <li>Simpan memo operasional harian</li>
+                  </ul>
+                </div>
+                <!-- Sales & Marketer -->
+                <div class="solution-card">
+                  <div class="sol-icon">📈</div>
+                  <h3 class="sol-title">Sales & Marketer</h3>
+                  <ul class="sol-list">
+                    <li>Catat info prospek terbaru</li>
+                    <li>Atur follow-up pelanggan terjadwal</li>
+                    <li>Ringkas penawaran produk instan</li>
+                  </ul>
+                </div>
+                <!-- Profesional -->
+                <div class="solution-card">
+                  <div class="sol-icon">💼</div>
+                  <h3 class="sol-title">Profesional</h3>
+                  <ul class="sol-list">
+                    <li>Briefing harian agenda pagi</li>
+                    <li>Catat meeting log via pesan suara</li>
+                    <li>Kelola task list prioritas tinggi</li>
+                  </ul>
+                </div>
+              </div>
+            </section>
+
             <!-- Interactive Personality Showcase Section -->
             <section id="landing-personalities" class="landing-personalities-sec">
               <div class="landing-sec-header">
@@ -256,7 +449,7 @@
                   <span class="landing-badge-dot"></span> Unique Selling Point (USP)
                 </div>
                 <h2 class="landing-sec-title">Asisten dengan 6 Kepribadian Unik</h2>
-                <p class="landing-sec-desc">Salah satu fitur andalan NAIVA adalah fleksibilitas kepribadian asisten Anda. Kustomisasi nama, avatar emoji, gaya bahasa, dan rasakan cara asisten merespons pesan harian Anda.</p>
+                <p class="landing-sec-desc">Sesuaikan asisten virtual dengan gaya komunikasi Anda sendiri. Kustomisasi avatar emoji, nama kontak, dan bahasa komunikasi.</p>
               </div>
 
               <div class="personality-showcase-container">
@@ -326,41 +519,6 @@
               </div>
             </section>
 
-            <!-- Integrations Section -->
-            <section id="landing-integrations" class="landing-integrations-sec">
-              <div class="landing-sec-header">
-                <h2 class="landing-sec-title">Integrasi Google & Gmail Resmi</h2>
-                <p class="landing-sec-desc">Hubungkan asisten virtual Anda dengan layanan digital penting untuk sinkronisasi otomatis.</p>
-              </div>
-
-              <div class="landing-integrations-grid">
-                <!-- Calendar -->
-                <div class="l-integration-card">
-                  <div class="l-int-icon">📅</div>
-                  <h4>Google Calendar</h4>
-                  <p>Sinkronisasi tugas harian dan acara langsung ke kalender Anda.</p>
-                </div>
-                <!-- Drive -->
-                <div class="l-integration-card">
-                  <div class="l-int-icon">💾</div>
-                  <h4>Google Drive</h4>
-                  <p>Akses dan ringkas file Anda secara langsung dari folder Drive.</p>
-                </div>
-                <!-- Contacts -->
-                <div class="l-integration-card">
-                  <div class="l-int-icon">👤</div>
-                  <h4>Google Contacts</h4>
-                  <p>Kelola kontak relasi Anda langsung melalui integrasi asisten.</p>
-                </div>
-                <!-- Gmail -->
-                <div class="l-integration-card">
-                  <div class="l-int-icon">✉️</div>
-                  <h4>Gmail</h4>
-                  <p>Membaca ringkasan email penting harian Anda tanpa membuka inbox.</p>
-                </div>
-              </div>
-            </section>
-
             <!-- How It Works Section -->
             <section id="landing-steps" class="landing-steps-sec">
               <div class="landing-sec-header">
@@ -387,12 +545,138 @@
               </div>
             </section>
 
+            <!-- Pricing Section -->
+            <section id="landing-pricing" class="landing-pricing-sec">
+              <div class="landing-sec-header">
+                <div class="landing-badge">
+                  <span class="landing-badge-dot"></span> Paket Harga Transparan
+                </div>
+                <h2 class="landing-sec-title">Plan Berlangganan</h2>
+                <p class="landing-sec-desc">Pilih paket asisten pribadi yang paling sesuai dengan kebutuhan produktivitas harian Anda.</p>
+              </div>
+
+              <div class="pricing-plans-cols">
+                <!-- Free Plan -->
+                <div class="pricing-card-landing">
+                  <div class="p-card-header">
+                    <h3>Free Plan</h3>
+                    <span class="p-card-price">Rp 0</span>
+                    <p>Coba fitur dasar asisten secara gratis.</p>
+                  </div>
+                  <ul class="p-card-features">
+                    <li><span>✓</span> Asisten Chat WhatsApp (Basic Mode)</li>
+                    <li><span>✓</span> Maksimal 20 pesan/hari</li>
+                    <li><span>✓</span> 1 Profil Kepribadian (Friendly)</li>
+                    <li><span>✓</span> 3 Agenda Reminders Aktif</li>
+                    <li><span class="cross">✗</span> Integrasi Google Calendar / Drive</li>
+                  </ul>
+                  <a href="#signup" class="pricing-card-btn">Coba Gratis</a>
+                </div>
+
+                <!-- Pro Plan -->
+                <div class="pricing-card-landing featured">
+                  <div class="p-card-badge">Populer</div>
+                  <div class="p-card-header">
+                    <h3>Pro Plan</h3>
+                    <span class="p-card-price">Rp 49.000<span class="price-period">/bln</span></span>
+                    <p>Produktivitas tanpa batas dan sinkronisasi penuh.</p>
+                  </div>
+                  <ul class="p-card-features">
+                    <li><span>✓</span> Akses Penuh Chat AI WhatsApp</li>
+                    <li><span>✓</span> Kuota Pesan Tanpa Batas (Unlimited)</li>
+                    <li><span>✓</span> Bebas Pilih 6 Mode Kepribadian</li>
+                    <li><span>✓</span> Unlimited Reminders & Briefing Harian</li>
+                    <li><span>✓</span> Integrasi Penuh Google Workspace</li>
+                    <li><span>✓</span> Prioritas Kecepatan Respons AI</li>
+                  </ul>
+                  <a href="#signup" class="pricing-card-btn featured-btn">Mulai Berlangganan</a>
+                </div>
+              </div>
+            </section>
+
+            <!-- FAQ Section -->
+            <section id="landing-faq" class="landing-faq-sec">
+              <div class="landing-sec-header">
+                <div class="landing-badge">
+                  <span class="landing-badge-dot"></span> FAQ
+                </div>
+                <h2 class="landing-sec-title">Pertanyaan Sering Diajukan</h2>
+                <p class="landing-sec-desc">Temukan jawaban atas pertanyaan umum seputar asisten virtual NAIVA.</p>
+              </div>
+
+              <div class="faq-accordion-container">
+                <div class="faq-item">
+                  <button class="faq-question">
+                    <span>Apakah data chat saya aman dan terjamin kerahasiaannya?</span>
+                    <span class="faq-icon">+</span>
+                  </button>
+                  <div class="faq-answer">
+                    <p>Tentu saja. Semua pesan yang dikirimkan ke NAIVA diproses menggunakan enkripsi standar industri. Kami tidak menjual data chat atau informasi pribadi Anda ke pihak ketiga manapun.</p>
+                  </div>
+                </div>
+                <div class="faq-item">
+                  <button class="faq-question">
+                    <span>Bagaimana cara menyambungkan NAIVA ke nomor WhatsApp saya?</span>
+                    <span class="faq-icon">+</span>
+                  </button>
+                  <div class="faq-answer">
+                    <p>Setelah mendaftar dan masuk ke dashboard kontrol panel, Anda akan melihat panduan koneksi cepat. Anda cukup memindai kode QR atau memasukkan kode otentikasi unik di WhatsApp untuk langsung mengaktifkan asisten AI Anda.</p>
+                  </div>
+                </div>
+                <div class="faq-item">
+                  <button class="faq-question">
+                    <span>Apakah saya bisa menggunakan nomor WhatsApp pribadi yang sudah ada?</span>
+                    <span class="faq-icon">+</span>
+                  </button>
+                  <div class="faq-answer">
+                    <p>Ya, Anda bisa menggunakan nomor WhatsApp pribadi Anda saat ini. NAIVA akan berfungsi layaknya kontak chatbot biasa, sehingga Anda tetap bisa menggunakannya tanpa mengganggu percakapan chat dengan kontak lainnya.</p>
+                  </div>
+                </div>
+                <div class="faq-item">
+                  <button class="faq-question">
+                    <span>Apakah asisten NAIVA mendukung pesan suara (Voice Note)?</span>
+                    <span class="faq-icon">+</span>
+                  </button>
+                  <div class="faq-answer">
+                    <p>Ya, asisten NAIVA dilengkapi dengan fitur transkripsi otomatis suara-ke-teks. Anda cukup mengirimkan memo suara (Voice Note) di chat WhatsApp Anda, dan NAIVA akan otomatis memahami serta membalas pesan Anda.</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Trust Building Section -->
+            <section id="landing-trust" class="landing-trust-sec">
+              <div class="trust-container">
+                <div class="trust-header">
+                  <h3>Keamanan & Privasi Terjamin</h3>
+                  <p>Kepercayaan Anda adalah prioritas utama kami. Kami merancang sistem proteksi terbaik untuk data Second Brain Anda.</p>
+                </div>
+                <div class="trust-badge-row">
+                  <div class="trust-badge-card">
+                    <span class="t-badge-icon">🔒</span>
+                    <h4>Data Terenkripsi</h4>
+                    <p>Semua transmisi data obrolan dan dokumen dilindungi enkripsi SSL end-to-end yang ketat.</p>
+                  </div>
+                  <div class="trust-badge-card">
+                    <span class="t-badge-icon">🤖</span>
+                    <h4>Integrasi Google Resmi</h4>
+                    <p>Sinkronisasi data ke Google Calendar, Drive, dan Contacts menggunakan otentikasi OAuth2 resmi yang aman.</p>
+                  </div>
+                  <div class="trust-badge-card">
+                    <span class="t-badge-icon">👤</span>
+                    <h4>Privasi Mutlak</h4>
+                    <p>Data memori AI Anda diisolasi secara terpisah dan hanya diakses saat memproses permintaan Anda.</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
             <!-- CTA Footer Section -->
             <section class="landing-footer-cta">
               <div class="landing-cta-box">
-                <h2>Siap memiliki WhatsApp Second Brain Anda sendiri?</h2>
-                <p>Mulai kelola tugas, keuangan, dan memori pribadi secara cerdas menggunakan asisten NAIVA.</p>
-                <a href="#dashboard" class="landing-btn-cta-large">Buka Kontrol Dashboard</a>
+                <h2>Miliki Virtual Assistant Anda Sekarang</h2>
+                <p>Hanya dalam beberapa menit, NAIVA siap menjadi asisten pribadi yang selalu aktif di WhatsApp.</p>
+                <a href="#signup" class="landing-btn-cta-large">Hubungkan WhatsApp Gratis</a>
               </div>
             </section>
 
@@ -502,7 +786,7 @@
           </section>
 
           <!-- 1. DASHBOARD HOME VIEW -->
-          <section id="view-dashboard" class="view-section active">
+          <section id="view-dashboard" class="view-section">
             <!-- Hero banner card -->
             <div class="hero-card">
               <div class="hero-content">
