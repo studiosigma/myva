@@ -17,10 +17,8 @@ export class WhatsAppApiService {
   async sendMessage(to: string, text: string): Promise<boolean> {
     const url = `https://graph.facebook.com/${this.version}/${this.phoneNumberId}/messages`;
     
-    this.logger.log(`[WhatsApp API Output] Sending message to ${to}: "${text.substring(0, 60)}..."`);
+    this.logger.log(`[WhatsApp API] Sending message to ${to}: "${text.substring(0, 60)}..."`);
     
-    // In a real environment, we call fetch/axios:
-    /*
     try {
       const response = await fetch(url, {
         method: 'POST',
@@ -37,16 +35,16 @@ export class WhatsAppApiService {
         }),
       });
       const data = await response.json();
-      return response.ok;
+      if (!response.ok) {
+        this.logger.error(`WhatsApp API Error: ${JSON.stringify(data)}`);
+        return false;
+      }
+      this.logger.log(`WhatsApp message sent successfully. Message ID: ${(data as any)?.messages?.[0]?.id}`);
+      return true;
     } catch (error) {
       this.logger.error(`Failed to send WhatsApp message: ${error.message}`);
       return false;
     }
-    */
-
-    // Since this is a production-ready template that should be functional even during mock stages,
-    // we log it and return true.
-    return true;
   }
 
   async getMediaUrl(mediaId: string): Promise<string> {
@@ -99,10 +97,8 @@ export class WhatsAppApiService {
     buttons: { id: string; title: string }[],
   ): Promise<boolean> {
     const url = `https://graph.facebook.com/${this.version}/${this.phoneNumberId}/messages`;
-    this.logger.log(`[WhatsApp API Output] Sending interactive buttons to ${to}: "${text.substring(0, 60)}..."`);
+    this.logger.log(`[WhatsApp API] Sending interactive buttons to ${to}: "${text.substring(0, 60)}..."`);
 
-    // In a real environment, we call Meta's interactive message endpoint
-    /*
     try {
       const response = await fetch(url, {
         method: 'POST',
@@ -130,14 +126,17 @@ export class WhatsAppApiService {
           },
         }),
       });
-      return response.ok;
+      if (!response.ok) {
+        const data = await response.json();
+        this.logger.error(`WhatsApp Interactive API Error: ${JSON.stringify(data)}`);
+        // Fallback to standard text message if interactive fails
+        return this.sendMessage(to, text);
+      }
+      return true;
     } catch (error) {
       this.logger.error(`Failed to send interactive WhatsApp message: ${error.message}`);
       // Fallback to standard text message if interactive fails
       return this.sendMessage(to, text);
     }
-    */
-
-    return true;
   }
 }
