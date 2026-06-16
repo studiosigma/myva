@@ -2445,9 +2445,9 @@ function initEventListeners() {
 
   const personaMockData = {
     friendly: {
-      title: 'Friendly 😊',
+      title: 'Friendly <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:#128C7E;vertical-align:middle;margin-left:4px;"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>',
       desc: 'Asisten yang hangat, berempati, dan siap membantu keseharian Anda dengan nada bicara yang ramah dan santun.',
-      avatar: '😊',
+      avatar: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:#FFFFFF;"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>',
       name: 'NAIVA (Friendly)',
       features: [
         'Nada bicara santun & bersahabat',
@@ -2466,9 +2466,9 @@ function initEventListeners() {
       `
     },
     professional: {
-      title: 'Professional 💼',
+      title: 'Professional <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:#128C7E;vertical-align:middle;margin-left:4px;"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>',
       desc: 'Asisten eksekutif yang formal, berorientasi pada bisnis, efisiensi tinggi, dan berstruktur formal dalam setiap interaksi.',
-      avatar: '💼',
+      avatar: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:#FFFFFF;"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>',
       name: 'NAIVA (Professional)',
       features: [
         'Gaya penyampaian formal & taktis',
@@ -2487,9 +2487,9 @@ function initEventListeners() {
       `
     },
     islamic: {
-      title: 'Islamic Assistant 🌙',
+      title: 'Islamic Assistant <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:#128C7E;vertical-align:middle;margin-left:4px;"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>',
       desc: 'Asisten religius yang santun, membimbing dengan nilai-nilai Islami, serta memberikan nasihat bijak berdasarkan Al-Qur\'an dan hadits harian.',
-      avatar: '🌙',
+      avatar: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:#FFFFFF;"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>',
       name: 'NAIVA (Islamic)',
       features: [
         'Menggunakan kutipan Al-Qur\'an & Hadits harian',
@@ -2508,9 +2508,9 @@ function initEventListeners() {
       `
     },
     business: {
-      title: 'Business Partner 🤝',
+      title: 'Business Partner <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:#128C7E;vertical-align:middle;margin-left:4px;"><path d="m11 17 2 2a1 1 0 0 0 1.4 0l4-4a1 1 0 0 0 0-1.4l-2.2-2.2a3 3 0 0 0-4.2 0l-1 1"></path><path d="m13 15-2-2a1 1 0 0 0-1.4 0l-4 4a1 1 0 0 0 0 1.4l2.2 2.2a3 3 0 0 0 4.2 0l1-1"></path></svg>',
       desc: 'Partner bisnis strategis yang fokus pada target pertumbuhan, memberikan saran analitis, serta membantu pengambilan keputusan bisnis dengan cepat.',
-      avatar: '🤝',
+      avatar: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:#FFFFFF;"><path d="m11 17 2 2a1 1 0 0 0 1.4 0l4-4a1 1 0 0 0 0-1.4l-2.2-2.2a3 3 0 0 0-4.2 0l-1 1"></path><path d="m13 15-2-2a1 1 0 0 0-1.4 0l-4 4a1 1 0 0 0 0 1.4l2.2 2.2a3 3 0 0 0 4.2 0l1-1"></path></svg>',
       name: 'NAIVA (Partner)',
       features: [
         'Memberikan analisis & rekomendasi logis',
@@ -2529,9 +2529,9 @@ function initEventListeners() {
       `
     },
     grumpy: {
-      title: 'Grumpy Boss 👿',
+      title: 'Grumpy Boss <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:#128C7E;vertical-align:middle;margin-left:4px;"><circle cx="12" cy="12" r="10"></circle><path d="M16 16s-1.5-2-4-2-4 2-4 2"></path><line x1="9" y1="10" x2="9.01" y2="10"></line><line x1="15" y1="10" x2="15.01" y2="10"></line><path d="M7.5 7.5L10 9"></path><path d="M16.5 7.5L14 9"></path></svg>',
       desc: 'Asisten berkarakter keras, tegas, tanpa basa-basi, dan menuntut kedisiplinan tinggi untuk memastikan tugas Anda selesai tepat waktu.',
-      avatar: '👿',
+      avatar: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:#FFFFFF;"><circle cx="12" cy="12" r="10"></circle><path d="M16 16s-1.5-2-4-2-4 2-4 2"></path><line x1="9" y1="10" x2="9.01" y2="10"></line><line x1="15" y1="10" x2="15.01" y2="10"></line><path d="M7.5 7.5L10 9"></path><path d="M16.5 7.5L14 9"></path></svg>',
       name: 'NAIVA (Boss)',
       features: [
         'Tanpa basa-basi & menuntut kedisiplinan tinggi',
@@ -2550,9 +2550,9 @@ function initEventListeners() {
       `
     },
     romantic: {
-      title: 'Romantic Partner ❤️',
+      title: 'Romantic Partner <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:#128C7E;vertical-align:middle;margin-left:4px;"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>',
       desc: 'Pendamping virtual penuh kasih sayang, selalu suportif, memanggil dengan panggilan sayang/beb, dan memberikan dukungan emosional harian.',
-      avatar: '❤️',
+      avatar: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:#FFFFFF;"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>',
       name: 'NAIVA (Beb)',
       features: [
         'Penuh perhatian & kata-kata penyemangat hangat',
@@ -2583,7 +2583,7 @@ function initEventListeners() {
         if (data) {
           pInfoTitle.innerHTML = data.title;
           pInfoDesc.textContent = data.desc;
-          pMockupAvatar.textContent = data.avatar;
+          pMockupAvatar.innerHTML = data.avatar;
           pMockupName.textContent = data.name;
           pMockupChatBody.innerHTML = data.chat;
 

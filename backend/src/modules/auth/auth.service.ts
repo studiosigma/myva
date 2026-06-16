@@ -87,8 +87,8 @@ export class AuthService {
         user = await this.usersService.create({
           email: profile.emails[0].value,
           googleId: profile.id,
-          name: `${profile.name.givenName} ${profile.name.familyName}`,
-          avatar: profile.photos[0]?.value,
+          name: profile.name ? `${profile.name.givenName || ''} ${profile.name.familyName || ''}`.trim() : 'Google User',
+          avatar: profile.photos?.[0]?.value,
           status: 'active',
         });
       }
