@@ -20,15 +20,15 @@ import { AIModule } from '../modules/ai/ai.module';
         const port = Number(configService.get<any>('REDIS_PORT')) || 6379;
         const password = configService.get<string>('REDIS_PASSWORD') || undefined;
         
-        // Enable TLS for cloud Redis providers like Upstash (non-local)
-        const isLocal = host === 'localhost' || host === '127.0.0.1' || host === 'redis';
+        // Enable TLS for cloud Redis providers like Upstash, but not Redis Cloud free tier
+        const enableTls = configService.get<string>('REDIS_TLS') === 'true' || host.includes('upstash.io');
         
         return {
           connection: {
             host,
             port,
             password,
-            ...(isLocal ? {} : { tls: {} }),
+            ...(enableTls ? { tls: {} } : {}),
           },
         };
       },
