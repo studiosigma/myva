@@ -30,6 +30,15 @@ import { AIModule } from '../modules/ai/ai.module';
             password,
             ...(enableTls ? { tls: {} } : {}),
           },
+          defaultJobOptions: {
+            removeOnComplete: true,
+            removeOnFail: { count: 100 },
+            attempts: 3,
+            backoff: {
+              type: 'exponential',
+              delay: 2000,
+            },
+          },
         };
       },
     }),

@@ -9,6 +9,38 @@ import { IntentRouterService } from './intent-router.service';
 @Injectable()
 export class WhatsAppService {
   private readonly logger = new Logger(WhatsAppService.name);
+  private rateLimitMap = new Map<string, number[]>();
+
+  private checkRateLimit(from: string): boolean {
+    const now = Date.now();
+    const oneMinuteAgo = now - 60000;
+    
+    let timestamps = this.rateLimitMap.get(from) || [];
+    // Clean up old timestamps
+    timestamps = timestamps.filter(t => t > oneMinuteAgo);
+    
+    if (timestamps.length >= 10) {
+      this.rateLimitMap.set(from, timestamps); // Update the cleaned up timestamps back
+      return false; // Rate limit exceeded
+    }
+    
+    timestamps.push(now);
+    this.rateLimitMap.set(from, timestamps);
+    
+    // Occasional cleanup of the map to prevent memory leaks
+    if (this.rateLimitMap.size > 1000) {
+      for (const [key, times] of this.rateLimitMap.entries()) {
+        const validTimes = times.filter(t => t > oneMinuteAgo);
+        if (validTimes.length === 0) {
+          this.rateLimitMap.delete(key);
+        } else {
+          this.rateLimitMap.set(key, validTimes);
+        }
+      }
+    }
+    
+    return true; // Allowed
+  }
 
   constructor(
     private readonly prisma: PrismaService,
@@ -21,6 +53,16 @@ export class WhatsAppService {
 
   async handleIncomingMessage(from: string, text: string): Promise<void> {
     this.logger.log(`Handling message from ${from}: "${text}"`);
+
+    if (!this.checkRateLimit(from)) {
+      this.logger.warn(`Rate limit exceeded for ${from}`);
+      const timestamps = this.rateLimitMap.get(from);
+      // Only send warning on the exact 10th/11th message to avoid spamming the warning itself
+      if (timestamps && timestamps.length === 10) {
+         await this.whatsappApiService.sendMessage(from, `⚠️ *Sistem Pengamanan*\n\nAnda mengirim pesan terlalu cepat (Batas 10 pesan/menit). Mohon jeda sejenak untuk menghindari pemblokiran akun otomatis.`);
+      }
+      return;
+    }
 
     // 1. Lookup user by WhatsApp number
     let user = await this.usersService.findOneByWaNumber(from);
@@ -124,23 +166,43 @@ export class WhatsAppService {
     }
 
     // 4. Route intent & get reply
-    const replyText = await this.intentRouterService.routeMessage(user.id, text, user.persona);
+    try {
+      const replyText = await this.intentRouterService.routeMessage(user.id, text, user.persona);
 
-    // 5. Log outgoing message
-    await this.prisma.message.create({
-      data: {
-        conversationId: conversation.id,
-        senderType: 'assistant',
-        text: replyText,
-      },
-    });
+      // 5. Log outgoing message
+      await this.prisma.message.create({
+        data: {
+          conversationId: conversation.id,
+          senderType: 'assistant',
+          text: replyText,
+        },
+      });
 
-    // 6. Send message back via WhatsApp Cloud API
-    await this.whatsappApiService.sendMessage(from, replyText);
+      // 6. Send message back via WhatsApp Cloud API
+      await this.whatsappApiService.sendMessage(from, replyText);
+    } catch (error) {
+      this.logger.error(`Error processing message for user ${user.id}: ${error.message}`);
+      
+      const fallbackMsg = `🙏 *Mohon Maaf*\n\nSistem MYVA saat ini sedang mengalami gangguan teknis. Mohon tunggu beberapa menit dan coba lagi ya.`;
+      
+      // Attempt to send the fallback message to user
+      await this.whatsappApiService.sendMessage(from, fallbackMsg).catch(err => {
+        this.logger.error(`Failed to send fallback message: ${err.message}`);
+      });
+    }
   }
 
   async handleIncomingAudio(from: string, audio: { id: string; mime_type: string }): Promise<void> {
     this.logger.log(`Handling incoming audio webhook from ${from}. Media ID: ${audio.id}`);
+
+    if (!this.checkRateLimit(from)) {
+      this.logger.warn(`Rate limit exceeded for audio from ${from}`);
+      const timestamps = this.rateLimitMap.get(from);
+      if (timestamps && timestamps.length === 10) {
+         await this.whatsappApiService.sendMessage(from, `⚠️ *Sistem Pengamanan*\n\nAnda mengirim pesan terlalu cepat (Batas 10 pesan/menit). Mohon jeda sejenak untuk menghindari pemblokiran akun otomatis.`);
+      }
+      return;
+    }
 
     // Find or create user
     let user = await this.usersService.findOneByWaNumber(from);
