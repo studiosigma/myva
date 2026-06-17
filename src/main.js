@@ -725,7 +725,9 @@ function renderDashboard() {
   if (todaysEvents.length === 0) {
     agendaList.innerHTML = `
       <div class="empty-state compact">
-        <span class="empty-state-icon">📅</span>
+        <span class="empty-state-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+        </span>
         <span class="empty-state-title">Belum ada agenda hari ini</span>
         <span class="empty-state-desc">Tambahkan event di kalender atau kirim pesan via WhatsApp.</span>
         <a href="#calendar" class="empty-state-cta">Buka Kalender</a>
@@ -754,7 +756,9 @@ function renderDashboard() {
   if (priorities.length === 0) {
     checklist.innerHTML = `
       <div class="empty-state compact">
-        <span class="empty-state-icon">✅</span>
+        <span class="empty-state-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
+        </span>
         <span class="empty-state-title">Belum ada tugas</span>
         <span class="empty-state-desc">Buat tugas pertama Anda atau kirim via WhatsApp.</span>
         <a href="#tasks" class="empty-state-cta">Buat Tugas</a>
@@ -913,7 +917,9 @@ function renderMemoryCenter() {
   if (filtered.length === 0) {
     grid.innerHTML = `
       <div class="empty-state" style="grid-column: 1 / -1; margin: 40px auto;">
-        <span class="empty-state-icon">🧠</span>
+        <span class="empty-state-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"></path><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"></path><path d="M12 5V4"></path><path d="M12 18v1"></path><path d="M12 11h.01"></path></svg>
+        </span>
         <span class="empty-state-title">Belum ada memori</span>
         <span class="empty-state-desc">Simpan catatan penting, insight, atau draf langsung dari chat WhatsApp Anda ke Memory Center.</span>
       </div>`;
@@ -968,7 +974,9 @@ function renderTasksBoard() {
     if (filtered.length === 0) {
       container.innerHTML = `
         <div class="empty-state compact" style="margin: 20px 10px;">
-          <span class="empty-state-icon">📋</span>
+          <span class="empty-state-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M9 14h6"></path><path d="M9 18h6"></path><path d="M9 10h6"></path></svg>
+          </span>
           <span class="empty-state-title">Kosong</span>
           <span class="empty-state-desc">Belum ada tugas di tahap ini.</span>
         </div>`;
@@ -1117,7 +1125,9 @@ function renderRemindersTimeline() {
   if (activeCount === 0) {
     mainTimeline.innerHTML = `
       <div class="empty-state" style="padding: 60px 0;">
-        <span class="empty-icon">🔔</span>
+        <span class="empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+        </span>
         <span class="empty-title">No reminders set</span>
         <span class="empty-desc">Create tasks or notes, or add custom reminders to be alerted on WhatsApp.</span>
       </div>`;
@@ -1152,7 +1162,9 @@ function renderFilesVault() {
   if (filtered.length === 0) {
     grid.innerHTML = `
       <div class="empty-state" style="grid-column: 1 / -1; margin: 40px auto;">
-        <span class="empty-state-icon">📂</span>
+        <span class="empty-state-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+        </span>
         <span class="empty-state-title">Belum ada file</span>
         <span class="empty-state-desc">Upload dokumen atau gambar referensi untuk diakses MYVA saat menjawab chat Anda.</span>
       </div>`;
@@ -1374,7 +1386,9 @@ function renderContactsManager() {
   if (filtered.length === 0) {
     grid.innerHTML = `
       <div class="empty-state" style="grid-column: 1 / -1; margin: 40px auto;">
-        <span class="empty-state-icon">👥</span>
+        <span class="empty-state-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        </span>
         <span class="empty-state-title">Belum ada kontak</span>
         <span class="empty-state-desc">Data klien atau rekan kerja akan otomatis tersimpan di sini dari interaksi WhatsApp Anda.</span>
       </div>`;
@@ -1565,7 +1579,9 @@ function renderCalendarAgenda() {
     emptyDiv.className = 'empty-state';
     emptyDiv.style.padding = '60px 0';
     emptyDiv.innerHTML = `
-        <span class="empty-icon">📅</span>
+        <span class="empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+        </span>
         <span class="empty-title">All clean</span>
         <span class="empty-desc">No events scheduled for this day.</span>
     `;
@@ -2426,7 +2442,9 @@ function initEventListeners() {
       btnSandboxLogin.disabled = true;
       const res = await state.devLoginInstant();
       btnSandboxLogin.disabled = false;
-      if (!res.success && alertEl) {
+      if (res.success) {
+        window.location.hash = '#dashboard';
+      } else if (alertEl) {
         alertEl.textContent = res.message;
         alertEl.style.display = 'block';
       }
@@ -4236,11 +4254,12 @@ const initializeApp = async () => {
     localStorage.setItem('myva_token', urlAccessToken);
     localStorage.setItem('myva_refresh_token', urlRefreshToken);
     
-    // Clear URL parameters
+    // Clear URL parameters and route directly to dashboard
     const cleanUrl = new URL(window.location.href);
     cleanUrl.searchParams.delete('accessToken');
     cleanUrl.searchParams.delete('refreshToken');
-    window.history.replaceState({}, document.title, cleanUrl.pathname + cleanUrl.hash);
+    cleanUrl.hash = '#dashboard';
+    window.history.replaceState({}, document.title, cleanUrl.pathname + cleanUrl.search + cleanUrl.hash);
   }
 
   await state.syncWithBackend();
