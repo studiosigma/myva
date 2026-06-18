@@ -45,7 +45,7 @@ export class IntentRouterService {
     });
 
     if (plan === 'free' && messageCount >= 5) {
-      return `⚠️ *Batas Kuota Chat Terlampaui* ⚠️\n\nAnda telah mencapai batas 5 pesan gratis hari ini. Silakan upgrade ke paket *Basic* atau *Pro* melalui dasbor MYVA Anda untuk menikmati kuota chat tanpa batas! 🚀`;
+      return `⚠️ *Batas Kuota Chat Terlampaui* ⚠️\n\nAnda telah mencapai batas 5 pesan gratis hari ini. Silakan upgrade ke paket *Basic* atau *Pro* melalui dasbor MyVA Anda untuk menikmati kuota chat tanpa batas! 🚀`;
     }
 
     // 1. INTENT: SEARCH MEMORIES
@@ -102,7 +102,7 @@ export class IntentRouterService {
       cleanText.startsWith('calendar ')
     ) {
       if (plan === 'free') {
-        return `⚠️ *Fitur Penjadwalan Terbatas* ⚠️\n\nFitur pembuatan event & Google Meet link via WhatsApp hanya tersedia pada paket *Basic* atau *Pro*. Silakan upgrade paket Anda di dasbor MYVA! 🗓️`;
+        return `⚠️ *Fitur Penjadwalan Terbatas* ⚠️\n\nFitur pembuatan event & Google Meet link via WhatsApp hanya tersedia pada paket *Basic* atau *Pro*. Silakan upgrade paket Anda di dasbor MyVA! 🗓️`;
       }
       const content = text.replace(/^(jadwal|meeting|pertemuan|janji|calendar)\s+/i, '').trim();
       
@@ -151,7 +151,7 @@ export class IntentRouterService {
     // Matches: "todo...", "task...", "buat todo..."
     if (cleanText.startsWith('todo ') || cleanText.startsWith('task ') || cleanText.startsWith('buat todo ')) {
       if (plan === 'free' || plan === 'basic') {
-        return `⚠️ *Fitur Task Management Terbatas* ⚠️\n\nFitur manajemen tugas/To-Do list via WhatsApp hanya tersedia pada paket *Pro*. Silakan upgrade paket Anda di dasbor MYVA! 📋`;
+        return `⚠️ *Fitur Task Management Terbatas* ⚠️\n\nFitur manajemen tugas/To-Do list via WhatsApp hanya tersedia pada paket *Pro*. Silakan upgrade paket Anda di dasbor MyVA! 📋`;
       }
       let title = text.replace(/^(todo|task|buat todo)\s+/i, '').trim();
       const task = await this.taskService.create(userId, { title });
@@ -230,7 +230,7 @@ export class IntentRouterService {
       cleanText.startsWith('email')
     ) {
       if (plan === 'free') {
-        return `⚠️ *Fitur Gmail Assistant Terbatas* ⚠️\n\nFitur membaca atau mencari email via WhatsApp hanya tersedia pada paket *Basic* atau *Pro*. Silakan upgrade paket Anda di dasbor MYVA! 📧`;
+        return `⚠️ *Fitur Gmail Assistant Terbatas* ⚠️\n\nFitur membaca atau mencari email via WhatsApp hanya tersedia pada paket *Basic* atau *Pro*. Silakan upgrade paket Anda di dasbor MyVA! 📧`;
       }
       const isGmailConnected = user?.gmailConnected || false;
 
@@ -403,7 +403,7 @@ export class IntentRouterService {
 
       // Request OpenAI to summarize these search results and formulate a solid response
       const prompt = `
-        Anda adalah MYVA, personal AI assistant. Pengguna meminta Anda mencari informasi berikut di internet: "${query}".
+        Anda adalah MyVA, personal AI assistant. Pengguna meminta Anda mencari informasi berikut di internet: "${query}".
         
         Berikut adalah hasil pencarian yang berhasil kami dapatkan dari internet:
         ${resultsText}

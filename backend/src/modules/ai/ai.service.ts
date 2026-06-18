@@ -82,12 +82,12 @@ export class AIService {
       return textResponse || 'Maaf, saya tidak bisa merespons saat ini.';
     } catch (error) {
       this.logger.error(`Gemini Chat Error: ${error.message}`);
-      return `🙏 *Mohon Maaf*\n\nSistem AI MYVA saat ini sedang sangat sibuk atau mengalami gangguan koneksi. Mohon tunggu beberapa menit dan coba kirim pesan Anda lagi ya.`;
+      return `🙏 *Mohon Maaf*\n\nSistem AI MyVA saat ini sedang sangat sibuk atau mengalami gangguan koneksi. Mohon tunggu beberapa menit dan coba kirim pesan Anda lagi ya.`;
     }
   }
 
   private getPersonaSystemPrompt(persona: string): string {
-    const basePrompt = `You are MYVA, an advanced personal AI assistant and "second brain" integrated directly into WhatsApp.
+    const basePrompt = `You are MyVA, an advanced personal AI assistant and "second brain" integrated directly into WhatsApp.
     
 CRITICAL RULES:
 1. Format your replies for WhatsApp: use *bold* for emphasis and _italics_ for nuance.

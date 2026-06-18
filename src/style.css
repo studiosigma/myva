@@ -1,5 +1,5 @@
 /* ==========================================================================
-   MYVA DESIGN SYSTEM & GLOBAL CSS
+   MyVA DESIGN SYSTEM & GLOBAL CSS
    ========================================================================== */
 
 /* Variables */
@@ -206,6 +206,14 @@ input, button, select, textarea {
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.5px;
+}
+
+.brand-my {
+  color: #000000 !important;
+}
+
+.brand-va {
+  color: #25D366 !important;
 }
 
 .logo-subtitle {

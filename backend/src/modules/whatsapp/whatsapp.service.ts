@@ -125,7 +125,7 @@ export class WhatsAppService {
 
     if (urls && urls.length > 0 && !isSearchQuery) {
       if (user.plan === 'free') {
-        const warning = `⚠️ *Fitur Ringkasan Web Terbatas* ⚠️\n\nFitur merangkum konten dari link/URL via WhatsApp hanya tersedia pada paket *Basic* atau *Pro*. Silakan upgrade paket Anda di dasbor MYVA! 🔍`;
+        const warning = `⚠️ *Fitur Ringkasan Web Terbatas* ⚠️\n\nFitur merangkum konten dari link/URL via WhatsApp hanya tersedia pada paket *Basic* atau *Pro*. Silakan upgrade paket Anda di dasbor MyVA! 🔍`;
         await this.whatsappApiService.sendMessage(from, warning);
         return;
       }
@@ -183,7 +183,7 @@ export class WhatsAppService {
     } catch (error) {
       this.logger.error(`Error processing message for user ${user.id}: ${error.message}`);
       
-      const fallbackMsg = `🙏 *Mohon Maaf*\n\nSistem MYVA saat ini sedang mengalami gangguan teknis. Mohon tunggu beberapa menit dan coba lagi ya.`;
+      const fallbackMsg = `🙏 *Mohon Maaf*\n\nSistem MyVA saat ini sedang mengalami gangguan teknis. Mohon tunggu beberapa menit dan coba lagi ya.`;
       
       // Attempt to send the fallback message to user
       await this.whatsappApiService.sendMessage(from, fallbackMsg).catch(err => {
@@ -218,7 +218,7 @@ export class WhatsAppService {
     }
 
     if (user.plan === 'free') {
-      const warning = `⚠️ *Fitur Voice Note Terbatas* ⚠️\n\nFitur transkripsi & rangkuman pesan suara (voice note) via WhatsApp hanya tersedia pada paket *Basic* atau *Pro*. Silakan upgrade paket Anda di dasbor MYVA! 🎙️`;
+      const warning = `⚠️ *Fitur Voice Note Terbatas* ⚠️\n\nFitur transkripsi & rangkuman pesan suara (voice note) via WhatsApp hanya tersedia pada paket *Basic* atau *Pro*. Silakan upgrade paket Anda di dasbor MyVA! 🎙️`;
       await this.whatsappApiService.sendMessage(from, warning);
       return;
     }

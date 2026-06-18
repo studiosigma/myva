@@ -13,7 +13,7 @@ window.fetch = function (input, init) {
 };
 
 /* ==========================================================================
-   MYVA CORE APPLICATION LOGIC
+   MyVA CORE APPLICATION LOGIC
    ========================================================================== */
 
 // --- PERSONA NAME MAPPING (Bug #9: consistent naming) ---
@@ -40,7 +40,7 @@ let activeOauthKey = null;
 let activeSettingsKey = null;
 
 let dashSimChatLog = [
-  { sender: 'assistant', text: 'Halo! Saya asisten AI MYVA. Kirimkan pesan atau perintah WhatsApp di sini untuk disimulasikan.', time: '09:00' }
+  { sender: 'assistant', text: 'Halo! Saya asisten AI MyVA. Kirimkan pesan atau perintah WhatsApp di sini untuk disimulasikan.', time: '09:00' }
 ];
 
 // --- STATE MANAGEMENT ---
@@ -55,7 +55,7 @@ class AppState {
     this.expenses = this.load('expenses', DEFAULT_EXPENSES);
     
     this.studio = this.load('studio_config', {
-      name: 'MYVA',
+      name: 'MyVA',
       emoji: '🤖',
       personality: 'friendly',
       style: 'normal',
@@ -119,7 +119,7 @@ class AppState {
         this.save('profile', this.profile);
 
         this.studio = {
-          name: this.studio.name || 'MYVA',
+          name: this.studio.name || 'MyVA',
           emoji: this.studio.emoji || '🤖',
           personality: user.persona || this.studio.personality || 'friendly',
           style: this.studio.style || 'normal',
@@ -515,7 +515,7 @@ const state = new AppState();
 
 // --- ROUTER SYSTEM ---
 const viewsMap = {
-  landing: 'Myva',
+  landing: 'MyVA',
   login: 'Login',
   signup: 'Sign Up',
   dashboard: 'Dashboard',
@@ -592,7 +592,7 @@ function initRouter() {
     // Update Header title
     const headerTitle = document.getElementById('view-title');
     if (headerTitle) {
-      headerTitle.textContent = viewsMap[hash] || 'MYVA';
+      headerTitle.textContent = viewsMap[hash] || 'MyVA';
     }
 
     // Load dynamic actions in header
@@ -1166,7 +1166,7 @@ function renderFilesVault() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
         </span>
         <span class="empty-state-title">Belum ada file</span>
-        <span class="empty-state-desc">Upload dokumen atau gambar referensi untuk diakses MYVA saat menjawab chat Anda.</span>
+        <span class="empty-state-desc">Upload dokumen atau gambar referensi untuk diakses MyVA saat menjawab chat Anda.</span>
       </div>`;
     return;
   }
@@ -2007,7 +2007,7 @@ async function handleStudioSendMessage() {
         setTimeout(() => {
           isAssistantTyping = false;
           const title = "Myva SaaS Product Launch Specification";
-          const summary = "Dokumen ini menjelaskan rencana peluncuran produk MYVA, sebuah asisten AI berbasis WhatsApp. Poin utama meliputi manajemen memori terenkripsi, integrasi Midtrans, dan pengingat BullMQ.";
+          const summary = "Dokumen ini menjelaskan rencana peluncuran produk MyVA, sebuah asisten AI berbasis WhatsApp. Poin utama meliputi manajemen memori terenkripsi, integrasi Midtrans, dan pengingat BullMQ.";
           const points = [
             "Peluncuran dijadwalkan pada akhir bulan Juni 2026.",
             "Modul pembayaran menggunakan Midtrans Subscription.",
@@ -2996,7 +2996,7 @@ function initEventListeners() {
               <label class="form-label" style="font-weight:600;margin-bottom:6px;display:block;">Sync Direction</label>
               <select class="form-input" id="settings-gcal-direction" style="height:38px;padding:0 10px;width:100%;border-radius:6px;border:1px solid var(--border-color);background:transparent;color:var(--text-primary);">
                 <option value="twoway" style="background:var(--card-bg);color:var(--text-primary);">Two-way Sync (Sync both ways)</option>
-                <option value="readonly" style="background:var(--card-bg);color:var(--text-primary);">Read-only (Import to MYVA only)</option>
+                <option value="readonly" style="background:var(--card-bg);color:var(--text-primary);">Read-only (Import to MyVA only)</option>
               </select>
             </div>
             <div class="form-group">
@@ -3018,7 +3018,7 @@ function initEventListeners() {
           formHtml = `
             <div class="form-group" style="margin-bottom:16px;">
               <label class="form-label" style="font-weight:600;margin-bottom:6px;display:block;">Backup Folder Name</label>
-              <input type="text" class="form-input" id="settings-gdrive-folder" value="MYVA Backup" style="height:38px;padding:0 12px;width:100%;border-radius:6px;border:1px solid var(--border-color);background:transparent;color:var(--text-primary);" />
+              <input type="text" class="form-input" id="settings-gdrive-folder" value="MyVA Backup" style="height:38px;padding:0 12px;width:100%;border-radius:6px;border:1px solid var(--border-color);background:transparent;color:var(--text-primary);" />
             </div>
             <div class="form-group">
               <label class="form-label" style="font-weight:600;margin-bottom:6px;display:block;">File Sync Categories</label>
@@ -3210,7 +3210,7 @@ function initEventListeners() {
   if (btnExportData) {
     btnExportData.addEventListener('click', () => {
       const exportPayload = {
-        appName: "MYVA",
+        appName: "MyVA",
         exportDate: new Date().toISOString(),
         profile: {
           username: state.profile.username || "User",
@@ -3375,7 +3375,7 @@ function initEventListeners() {
 
   // Assistant Studio Inputs
   document.getElementById('assistant-name-input').addEventListener('input', (e) => {
-    const val = e.target.value.trim() || 'MYVA';
+    const val = e.target.value.trim() || 'MyVA';
     state.updateStudio({ name: val });
     document.getElementById('mockup-chat-name').textContent = `${val} AI`;
   });
@@ -3533,9 +3533,9 @@ function initEventListeners() {
         
         let briefingText = '';
         if (langVal === 'en') {
-          briefingText = `☀️ *MYVA DAILY BRIEFING* ☀️\n\nGood morning ${state.profile.username}! Here is your schedule for today:\n\n📅 *Today's Schedule*:\n- 09:00: Product Launch Align\n- 14:00: Catch-up Meeting\n\n📋 *Priority Tasks*:\n- Complete API documentation\n- Send JavaCoffee invoice\n\nHave a productive day! 🚀`;
+          briefingText = `☀️ *MyVA DAILY BRIEFING* ☀️\n\nGood morning ${state.profile.username}! Here is your schedule for today:\n\n📅 *Today's Schedule*:\n- 09:00: Product Launch Align\n- 14:00: Catch-up Meeting\n\n📋 *Priority Tasks*:\n- Complete API documentation\n- Send JavaCoffee invoice\n\nHave a productive day! 🚀`;
         } else {
-          briefingText = `☀️ *DAILY BRIEFING MYVA* ☀️\n\nSelamat pagi ${state.profile.username}! Berikut ringkasan agenda Anda hari ini:\n\n📅 *Agenda Hari Ini*:\n- 09:00: Product Launch Align\n- 14:00: Catch-up Meeting\n\n📋 *Tugas Prioritas*:\n- Menyelesaikan dokumentasi API\n- Mengirimkan invoice JavaCoffee\n\nSemoga hari Anda produktif! 🚀`;
+          briefingText = `☀️ *DAILY BRIEFING MyVA* ☀️\n\nSelamat pagi ${state.profile.username}! Berikut ringkasan agenda Anda hari ini:\n\n📅 *Agenda Hari Ini*:\n- 09:00: Product Launch Align\n- 14:00: Catch-up Meeting\n\n📋 *Tugas Prioritas*:\n- Menyelesaikan dokumentasi API\n- Mengirimkan invoice JavaCoffee\n\nSemoga hari Anda produktif! 🚀`;
         }
         
         briefingText = formatMessageByStyle(briefingText, state.studio.style);
@@ -3620,7 +3620,7 @@ function initEventListeners() {
       `;
 
       // Read values from form
-      const name = document.getElementById('assistant-name-input').value.trim() || 'MYVA';
+      const name = document.getElementById('assistant-name-input').value.trim() || 'MyVA';
       const emoji = document.getElementById('studio-avatar-emoji').textContent || '🤖';
       
       const activeCard = document.querySelector('.personality-card.active');
@@ -3694,9 +3694,9 @@ const FILE_PRESET_ANALYSES = {
     ]
   },
   doc: {
-    summary: 'This document represents the standard service level agreement (SLA) for the MYVA assistant subscriptions. It outlines server uptime guarantees, client response metrics, and subscription renewal protocols.',
+    summary: 'This document represents the standard service level agreement (SLA) for the MyVA assistant subscriptions. It outlines server uptime guarantees, client response metrics, and subscription renewal protocols.',
     points: [
-      'MYVA promises 99.9% API connection uptime.',
+      'MyVA promises 99.9% API connection uptime.',
       'Database updates are backed up hourly on encrypted storages.',
       'Support request response time guarantee is 4 hours for Pro tiers.'
     ],
@@ -3729,7 +3729,7 @@ function handleFileProcessing(filesList) {
     <div class="modal-card" style="max-width:320px; text-align:center; padding: 32px 24px;">
       <svg class="animate-pulse" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--secondary-color)" stroke-width="2" style="margin: 0 auto 16px auto;"><path d="m12 3-1.912 5.886L4.202 9l5.886 1.912L12 17l1.912-5.886 5.886-1.912-5.886-1.912z"></path></svg>
       <h4 style="font-size:15px; font-weight:700; margin-bottom:8px;">AI Analyzing Document...</h4>
-      <p style="font-size:12px; color:var(--text-secondary);">MYVA is reading contents, extracting key points, and generating action items.</p>
+      <p style="font-size:12px; color:var(--text-secondary);">MyVA is reading contents, extracting key points, and generating action items.</p>
     </div>
   `;
   document.body.appendChild(loader);

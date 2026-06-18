@@ -52,7 +52,7 @@ export class SubscriptionService {
       merchantCode,
       paymentAmount: price.toString(),
       merchantOrderId: refId,
-      productDetails: `Langganan MYVA Paket ${plan.toUpperCase()}`,
+      productDetails: `Langganan MyVA Paket ${plan.toUpperCase()}`,
       email: user.email,
       phoneNumber: user.waNumber || '081234567890',
       callbackUrl: `${backendUrl}/subscription/webhook`,
