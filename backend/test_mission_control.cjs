@@ -9,17 +9,17 @@ async function main() {
 
   // Find admin user
   const admin = await prisma.user.findFirst({
-    where: { email: 'studia6ma@gmail.com' }
+    where: { email: 'studio6ma@gmail.com' }
   });
 
   if (!admin) {
-    console.error('Error: Admin user studia6ma@gmail.com not found.');
+    console.error('Error: Admin user studio6ma@gmail.com not found.');
     process.exit(1);
   }
 
   // Find a regular test user for impersonation and resetting trial
   let testUser = await prisma.user.findFirst({
-    where: { email: { not: 'studia6ma@gmail.com' } }
+    where: { email: { not: 'studio6ma@gmail.com' } }
   });
 
   if (!testUser) {

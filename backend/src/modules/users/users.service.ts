@@ -37,7 +37,7 @@ export class UsersService {
         throw new ConflictException('WhatsApp number already in use.');
       }
     }
-    if (data.email === 'studia6ma@gmail.com') {
+    if (data.email === 'studio6ma@gmail.com') {
       data.role = 'admin';
     }
     return this.prisma.user.create({ data });
