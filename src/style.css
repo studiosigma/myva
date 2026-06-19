@@ -436,7 +436,7 @@ input, button, select, textarea {
 }
 
 .header-settings-btn {
-  display: flex;
+  display: none; /* Hidden on desktop since settings is in sidebar */
   align-items: center;
   justify-content: center;
   width: 36px;
@@ -3366,6 +3366,10 @@ input:checked + .slider:before {
   .app-header {
     padding: 0 16px;
     height: 60px;
+  }
+
+  .header-settings-btn {
+    display: flex; /* Show on mobile/tablet since sidebar settings is hidden */
   }
 
   .content-body {
