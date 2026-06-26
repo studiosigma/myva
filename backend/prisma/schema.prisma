@@ -75,6 +75,8 @@ model Message {
   mimeType       String?  @map("mime_type")
   createdAt      DateTime @default(now()) @map("created_at")
 
+  whatsappMessageId String?  @unique @map("whatsapp_message_id")
+
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([conversationId])

@@ -51,8 +51,18 @@ export class WhatsAppService {
     @InjectQueue('reminder_queue') private readonly reminderQueue: Queue,
   ) {}
 
-  async handleIncomingMessage(from: string, text: string): Promise<void> {
-    this.logger.log(`Handling message from ${from}: "${text}"`);
+  async handleIncomingMessage(from: string, text: string, waMessageId?: string): Promise<void> {
+    this.logger.log(`Handling message from ${from}: "${text}" (ID: ${waMessageId || 'N/A'})`);
+
+    if (waMessageId) {
+      const existingMessage = await this.prisma.message.findUnique({
+        where: { whatsappMessageId: waMessageId },
+      });
+      if (existingMessage) {
+        this.logger.warn(`Duplicate WhatsApp message ID detected: ${waMessageId}. Skipping processing.`);
+        return;
+      }
+    }
 
     if (!this.checkRateLimit(from)) {
       this.logger.warn(`Rate limit exceeded for ${from}`);
@@ -104,6 +114,7 @@ export class WhatsAppService {
         conversationId: conversation.id,
         senderType: 'user',
         text,
+        whatsappMessageId: waMessageId || null,
       },
     });
 
@@ -192,8 +203,18 @@ export class WhatsAppService {
     }
   }
 
-  async handleIncomingAudio(from: string, audio: { id: string; mime_type: string }): Promise<void> {
-    this.logger.log(`Handling incoming audio webhook from ${from}. Media ID: ${audio.id}`);
+  async handleIncomingAudio(from: string, audio: { id: string; mime_type: string }, waMessageId?: string): Promise<void> {
+    this.logger.log(`Handling incoming audio webhook from ${from}. Media ID: ${audio.id} (ID: ${waMessageId || 'N/A'})`);
+
+    if (waMessageId) {
+      const existingMessage = await this.prisma.message.findUnique({
+        where: { whatsappMessageId: waMessageId },
+      });
+      if (existingMessage) {
+        this.logger.warn(`Duplicate WhatsApp audio message ID detected: ${waMessageId}. Skipping processing.`);
+        return;
+      }
+    }
 
     if (!this.checkRateLimit(from)) {
       this.logger.warn(`Rate limit exceeded for audio from ${from}`);
@@ -229,9 +250,12 @@ export class WhatsAppService {
       fromPhone: from,
       mediaId: audio.id,
       mimeType: audio.mime_type,
+      waMessageId,
+    }, {
+      jobId: waMessageId, // BullMQ automatically prevents duplicate queue entries
     });
 
-    this.logger.log(`Queued process_voice_note job for user ${user.id}`);
+    this.logger.log(`Queued process_voice_note job for user ${user.id} (Job ID: ${waMessageId || 'auto'})`);
   }
 
   async handleReminderInteraction(from: string, buttonId: string): Promise<void> {

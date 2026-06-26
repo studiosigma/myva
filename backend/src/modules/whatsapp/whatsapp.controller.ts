@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Query, HttpCode, HttpStatus, Logger, Req }
 import { WhatsAppService } from './whatsapp.service';
 import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import * as crypto from 'crypto';
 
 @ApiTags('WhatsApp Webhook')
 @Controller('whatsapp')
@@ -12,6 +13,54 @@ export class WhatsAppController {
     private readonly whatsappService: WhatsAppService,
     private readonly configService: ConfigService,
   ) {}
+
+  private validateSignature(req: any): boolean {
+    const signature = req.headers['x-hub-signature-256'];
+    const appSecret = this.configService.get<string>('WHATSAPP_APP_SECRET');
+
+    if (!appSecret) {
+      this.logger.warn('WHATSAPP_APP_SECRET is not configured. Webhook signature verification bypassed.');
+      return true;
+    }
+
+    if (!signature) {
+      this.logger.warn('x-hub-signature-256 header is missing.');
+      return false;
+    }
+
+    const parts = signature.split('=');
+    if (parts.length !== 2 || parts[0] !== 'sha256') {
+      this.logger.warn('Invalid x-hub-signature-256 format.');
+      return false;
+    }
+
+    const [, sigHash] = parts;
+    const rawBody = req.rawBody;
+    if (!rawBody) {
+      this.logger.warn('Raw body is empty or not available. Signature validation failed.');
+      return false;
+    }
+
+    const expectedHash = crypto
+      .createHmac('sha256', appSecret)
+      .update(rawBody)
+      .digest('hex');
+
+    if (sigHash.length !== expectedHash.length) {
+      return false;
+    }
+
+    const isValid = crypto.timingSafeEqual(
+      Buffer.from(sigHash, 'ascii'),
+      Buffer.from(expectedHash, 'ascii'),
+    );
+
+    if (!isValid) {
+      this.logger.error('Webhook signature mismatch! Potential spoofing attempt.');
+    }
+
+    return isValid;
+  }
 
   @Get()
   @ApiOperation({ summary: 'Meta Webhook Verification' })
@@ -34,8 +83,13 @@ export class WhatsAppController {
   @Post()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Receive incoming WhatsApp events' })
-  async handleWebhook(@Body() payload: any) {
-    // Check if it's a valid WhatsApp message event
+  async handleWebhook(@Req() req: any, @Body() payload: any) {
+    // 1. Verify webhook signature
+    if (!this.validateSignature(req)) {
+      return { success: false, error: 'Unauthorized signature' };
+    }
+
+    // 2. Check if it's a valid WhatsApp message event
     if (payload.object === 'whatsapp_business_account') {
       const entry = payload.entry?.[0];
       const changes = entry?.changes?.[0];
@@ -45,11 +99,12 @@ export class WhatsAppController {
       if (message) {
         const from = message.from;
         const type = message.type || 'text';
+        const messageId = message.id;
 
         if (type === 'text' && message.text?.body) {
-          await this.whatsappService.handleIncomingMessage(from, message.text.body);
+          await this.whatsappService.handleIncomingMessage(from, message.text.body, messageId);
         } else if (type === 'audio' && message.audio) {
-          await this.whatsappService.handleIncomingAudio(from, message.audio);
+          await this.whatsappService.handleIncomingAudio(from, message.audio, messageId);
         } else if (type === 'interactive' && message.interactive?.type === 'button_reply') {
           const buttonId = message.interactive.button_reply.id;
           if (buttonId.startsWith('complete_reminder_') || buttonId.startsWith('snooze_reminder_')) {

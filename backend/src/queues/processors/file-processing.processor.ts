@@ -72,8 +72,8 @@ export class FileProcessingProcessor extends WorkerHost {
   }
 
   private async handleVoiceNote(job: Job<any>): Promise<void> {
-    const { userId, fromPhone, mediaId, mimeType } = job.data;
-    this.logger.log(`Processing voice note ${mediaId} for user ${userId}`);
+    const { userId, fromPhone, mediaId, mimeType, waMessageId } = job.data;
+    this.logger.log(`Processing voice note ${mediaId} for user ${userId} (ID: ${waMessageId || 'N/A'})`);
 
     try {
       const user = await this.prisma.user.findUnique({
@@ -135,6 +135,7 @@ export class FileProcessingProcessor extends WorkerHost {
           conversationId: conversation.id,
           senderType: 'user',
           text: `[Voice Note: ${shortSummary}]`,
+          whatsappMessageId: waMessageId || null,
         },
       });
 
