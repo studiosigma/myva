@@ -2176,6 +2176,8 @@ async function renderSettingsPage() {
             backupEnabled: state.profile.backupEnabled !== false,
             plan: data.user.plan || 'free',
             role: data.user.role || 'user',
+            waVerified: data.user.waVerified || false,
+            waVerificationCode: data.user.waVerificationCode || null,
           };
           state.save('profile', state.profile);
           syncSidebarProfile();
@@ -2188,7 +2190,53 @@ async function renderSettingsPage() {
 
   // Populate form fields
   document.getElementById('settings-username').value = state.profile.username;
-  document.getElementById('settings-phone').value = state.profile.phone;
+  
+  let displayPhone = state.profile.phone || '';
+  if (displayPhone.startsWith('62')) {
+    displayPhone = displayPhone.substring(2);
+  }
+  document.getElementById('settings-phone').value = displayPhone;
+  
+  // Render verification badge and box
+  const badgeEl = document.getElementById('settings-phone-badge');
+  const boxEl = document.getElementById('wa-verification-box');
+  const commandEl = document.getElementById('wa-verification-command');
+  const linkEl = document.getElementById('link-verify-wa');
+  const copyBtn = document.getElementById('btn-copy-wa-code');
+
+  if (badgeEl && boxEl) {
+    const isVerified = state.profile.waVerified === true;
+    if (isVerified) {
+      badgeEl.className = 'verified-badge';
+      badgeEl.textContent = '✓ Verified';
+      badgeEl.style.display = 'inline-flex';
+      boxEl.style.display = 'none';
+    } else {
+      badgeEl.className = 'unverified-badge';
+      badgeEl.textContent = '⚠️ Unverified';
+      badgeEl.style.display = 'inline-flex';
+      
+      const code = state.profile.waVerificationCode || 'MYVA-0000';
+      if (commandEl) commandEl.textContent = `verifikasi ${code}`;
+      if (linkEl) {
+        linkEl.href = `https://wa.me/6281234567890?text=verifikasi%20${code}`;
+      }
+      boxEl.style.display = 'block';
+    }
+  }
+
+  if (copyBtn) {
+    copyBtn.onclick = (e) => {
+      e.preventDefault();
+      const code = state.profile.waVerificationCode || '';
+      navigator.clipboard.writeText(`verifikasi ${code}`).then(() => {
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => {
+          copyBtn.textContent = 'Salin';
+        }, 1500);
+      });
+    };
+  }
   
   const emailInput = document.getElementById('settings-email');
   if (emailInput) {
@@ -4519,7 +4567,9 @@ async function saveUserProfile() {
           username: data.user.name, 
           phone: data.user.waNumber,
           avatar: data.user.avatar || '🤖',
-          bio: bio
+          bio: bio,
+          waVerified: data.user.waVerified || false,
+          waVerificationCode: data.user.waVerificationCode || null,
         });
         playSuccessChime();
         showToast('Profile settings saved successfully!');

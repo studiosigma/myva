@@ -5,6 +5,7 @@ import { PrismaService } from '../../database/prisma.service';
 import { UsersService } from '../users/users.service';
 import { WhatsAppApiService } from '../../integrations/whatsapp-api.service';
 import { IntentRouterService } from './intent-router.service';
+import { normalizePhoneNumber } from '../../common/utils/phone-utils';
 
 @Injectable()
 export class WhatsAppService {
@@ -51,8 +52,9 @@ export class WhatsAppService {
     @InjectQueue('reminder_queue') private readonly reminderQueue: Queue,
   ) {}
 
-  async handleIncomingMessage(from: string, text: string, waMessageId?: string): Promise<void> {
-    this.logger.log(`Handling message from ${from}: "${text}" (ID: ${waMessageId || 'N/A'})`);
+  async handleIncomingMessage(fromRaw: string, text: string, waMessageId?: string): Promise<void> {
+    const from = normalizePhoneNumber(fromRaw);
+    this.logger.log(`Handling message from ${from} (raw: ${fromRaw}): "${text}" (ID: ${waMessageId || 'N/A'})`);
 
     if (waMessageId) {
       const existingMessage = await this.prisma.message.findUnique({
@@ -71,6 +73,47 @@ export class WhatsAppService {
       if (timestamps && timestamps.length === 10) {
          await this.whatsappApiService.sendMessage(from, `⚠️ *Sistem Pengamanan*\n\nAnda mengirim pesan terlalu cepat (Batas 10 pesan/menit). Mohon jeda sejenak untuk menghindari pemblokiran akun otomatis.`);
       }
+      return;
+    }
+
+    // Check if it's a verification message
+    if (/^verifikasi\s+myva-\d{4}$/i.test(text.trim())) {
+      const match = text.trim().match(/^verifikasi\s+(myva-\d{4})$/i);
+      const code = match ? match[1].toUpperCase() : '';
+      const targetUser = await this.prisma.user.findFirst({
+        where: { waVerificationCode: code }
+      });
+
+      if (!targetUser) {
+        await this.whatsappApiService.sendMessage(from, `❌ Kode verifikasi *${code}* tidak ditemukan atau sudah kedaluwarsa. Silakan periksa kembali kode di dasbor Settings Anda.`);
+        return;
+      }
+
+      const conflictingUser = await this.prisma.user.findUnique({
+        where: { waNumber: from }
+      });
+      
+      if (conflictingUser && conflictingUser.id !== targetUser.id) {
+        if (conflictingUser.waVerified) {
+          await this.whatsappApiService.sendMessage(from, `⚠️ Nomor WhatsApp ini sudah terverifikasi pada akun lain (${conflictingUser.email}).`);
+          return;
+        }
+        await this.prisma.user.update({
+          where: { id: conflictingUser.id },
+          data: { waNumber: null }
+        });
+      }
+
+      await this.prisma.user.update({
+        where: { id: targetUser.id },
+        data: {
+          waNumber: from,
+          waVerified: true,
+          waVerificationCode: null
+        }
+      });
+
+      await this.whatsappApiService.sendMessage(from, `🎉 *Verifikasi Berhasil!*\n\nAkun MyVA dengan email *${targetUser.email}* kini terhubung secara aman dengan nomor WhatsApp ini.`);
       return;
     }
 
@@ -203,8 +246,9 @@ export class WhatsAppService {
     }
   }
 
-  async handleIncomingAudio(from: string, audio: { id: string; mime_type: string }, waMessageId?: string): Promise<void> {
-    this.logger.log(`Handling incoming audio webhook from ${from}. Media ID: ${audio.id} (ID: ${waMessageId || 'N/A'})`);
+  async handleIncomingAudio(fromRaw: string, audio: { id: string; mime_type: string }, waMessageId?: string): Promise<void> {
+    const from = normalizePhoneNumber(fromRaw);
+    this.logger.log(`Handling incoming audio webhook from ${from} (raw: ${fromRaw}). Media ID: ${audio.id} (ID: ${waMessageId || 'N/A'})`);
 
     if (waMessageId) {
       const existingMessage = await this.prisma.message.findUnique({
@@ -343,7 +387,47 @@ export class WhatsAppService {
     }
   }
 
-  async simulateMessage(from: string, text: string): Promise<string> {
+  async simulateMessage(fromRaw: string, text: string): Promise<string> {
+    const from = normalizePhoneNumber(fromRaw);
+
+    // Check if it's a verification message
+    if (/^verifikasi\s+myva-\d{4}$/i.test(text.trim())) {
+      const match = text.trim().match(/^verifikasi\s+(myva-\d{4})$/i);
+      const code = match ? match[1].toUpperCase() : '';
+      const targetUser = await this.prisma.user.findFirst({
+        where: { waVerificationCode: code }
+      });
+
+      if (!targetUser) {
+        return `❌ Kode verifikasi *${code}* tidak ditemukan atau sudah kedaluwarsa. Silakan periksa kembali kode di dasbor Settings Anda.`;
+      }
+
+      const conflictingUser = await this.prisma.user.findUnique({
+        where: { waNumber: from }
+      });
+      
+      if (conflictingUser && conflictingUser.id !== targetUser.id) {
+        if (conflictingUser.waVerified) {
+          return `⚠️ Nomor WhatsApp ini sudah terverifikasi pada akun lain (${conflictingUser.email}).`;
+        }
+        await this.prisma.user.update({
+          where: { id: conflictingUser.id },
+          data: { waNumber: null }
+        });
+      }
+
+      await this.prisma.user.update({
+        where: { id: targetUser.id },
+        data: {
+          waNumber: from,
+          waVerified: true,
+          waVerificationCode: null
+        }
+      });
+
+      return `🎉 *Verifikasi Berhasil!*\n\nAkun MyVA dengan email *${targetUser.email}* kini terhubung secara aman dengan nomor WhatsApp ini.`;
+    }
+
     let user = await this.usersService.findOneByWaNumber(from);
     if (!user) {
       user = await this.prisma.user.findFirst();

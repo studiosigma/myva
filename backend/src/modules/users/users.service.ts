@@ -1,6 +1,7 @@
 import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { Prisma, User } from '@prisma/client';
+import { normalizePhoneNumber } from '../../common/utils/phone-utils';
 
 @Injectable()
 export class UsersService {
@@ -19,7 +20,8 @@ export class UsersService {
   }
 
   async findOneByWaNumber(waNumber: string): Promise<User | null> {
-    return this.prisma.user.findUnique({ where: { waNumber } });
+    const normalized = normalizePhoneNumber(waNumber);
+    return this.prisma.user.findUnique({ where: { waNumber: normalized } });
   }
 
   async findOneByReferralCode(referralCode: string): Promise<User | null> {
@@ -32,6 +34,7 @@ export class UsersService {
       throw new ConflictException('Email address already in use.');
     }
     if (data.waNumber) {
+      data.waNumber = normalizePhoneNumber(data.waNumber);
       const existingWa = await this.findOneByWaNumber(data.waNumber);
       if (existingWa) {
         throw new ConflictException('WhatsApp number already in use.');
@@ -45,6 +48,9 @@ export class UsersService {
 
   async update(id: string, data: Prisma.UserUpdateInput): Promise<User> {
     try {
+      if (data.waNumber && typeof data.waNumber === 'string') {
+        data.waNumber = normalizePhoneNumber(data.waNumber);
+      }
       return await this.prisma.user.update({
         where: { id },
         data,
@@ -54,3 +60,4 @@ export class UsersService {
     }
   }
 }
+

@@ -6,11 +6,12 @@ import { UpdatePersonaDto } from './dto/update-persona.dto';
 import { UpdateIntegrationsDto, UpdateBriefingDto } from './dto/update-settings.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { normalizePhoneNumber } from '../../common/utils/phone-utils';
 
+@Controller('users')
 @ApiTags('User Profile')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
-@Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
@@ -18,7 +19,11 @@ export class UsersController {
   @ApiOperation({ summary: 'Retrieve user profile settings' })
   @ApiResponse({ status: 200, description: 'Profile retrieved successfully.' })
   async getProfile(@GetUser('id') userId: string) {
-    const user = await this.usersService.findOneById(userId);
+    let user = await this.usersService.findOneById(userId);
+    if (!user.waVerified && !user.waVerificationCode) {
+      const code = `MYVA-${Math.floor(1000 + Math.random() * 9000)}`;
+      user = await this.usersService.update(userId, { waVerificationCode: code });
+    }
     const { passwordHash, ...sanitized } = user;
     return {
       success: true,
@@ -40,6 +45,16 @@ export class UsersController {
     if (dto.avatar !== undefined) updateData.avatar = dto.avatar;
     if (dto.assistantName !== undefined) updateData.assistantName = dto.assistantName;
     if (dto.assistantEmoji !== undefined) updateData.assistantEmoji = dto.assistantEmoji;
+
+    if (dto.waNumber !== undefined) {
+      const current = await this.usersService.findOneById(userId);
+      const normalizedNew = dto.waNumber ? normalizePhoneNumber(dto.waNumber) : '';
+      const normalizedCurrent = current.waNumber ? normalizePhoneNumber(current.waNumber) : '';
+      if (normalizedNew !== normalizedCurrent) {
+        updateData.waVerified = false;
+        updateData.waVerificationCode = dto.waNumber ? `MYVA-${Math.floor(1000 + Math.random() * 9000)}` : null;
+      }
+    }
 
     const user = await this.usersService.update(userId, updateData);
     const { passwordHash, ...sanitized } = user;

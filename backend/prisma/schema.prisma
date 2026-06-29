@@ -28,6 +28,8 @@ model User {
   briefingEnabled     Boolean  @default(true)  @map("briefing_enabled")
   briefingTime        String   @default("07:30") @map("briefing_time")
   followupEnabled     Boolean  @default(true)  @map("followup_enabled")
+  waVerified          Boolean  @default(false) @map("wa_verified")
+  waVerificationCode  String?  @map("wa_verification_code")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 

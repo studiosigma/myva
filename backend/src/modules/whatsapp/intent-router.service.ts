@@ -164,8 +164,8 @@ export class IntentRouterService {
     // 3. INTENT: CREATE TASK
     // Matches: "todo...", "task...", "buat todo..."
     if (cleanText.startsWith('todo ') || cleanText.startsWith('task ') || cleanText.startsWith('buat todo ')) {
-      if (plan === 'free' || plan === 'basic') {
-        return `⚠️ *Fitur Task Management Terbatas* ⚠️\n\nFitur manajemen tugas/To-Do list via WhatsApp hanya tersedia pada paket *Pro*. Silakan upgrade paket Anda di dasbor MyVA! 📋`;
+      if (plan === 'free') {
+        return `⚠️ *Fitur Task Management Terbatas* ⚠️\n\nFitur manajemen tugas/To-Do list via WhatsApp hanya tersedia pada paket *Basic* atau *Pro*. Silakan upgrade paket Anda di dasbor MyVA! 📋`;
       }
       let title = text.replace(/^(todo|task|buat todo)\s+/i, '').trim();
       const task = await this.taskService.create(userId, { title });
