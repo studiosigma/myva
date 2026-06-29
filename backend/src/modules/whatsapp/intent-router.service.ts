@@ -30,22 +30,24 @@ export class IntentRouterService {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     const plan = user?.plan || 'free';
 
-    // Enforce Chat Quota for Free plan
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
+    // Enforce Chat Quota for Free plan (7-days trial & max 30 messages total)
+    if (plan === 'free') {
+      const trialDurationMs = 7 * 24 * 60 * 60 * 1000;
+      const isTrialExpired = user ? (Date.now() - new Date(user.createdAt).getTime() > trialDurationMs) : true;
+      if (isTrialExpired) {
+        return `⚠️ *Masa Uji Coba Berakhir* ⚠️\n\nMasa uji coba gratis (7 hari) Anda telah berakhir. Silakan upgrade ke paket *Basic* atau *Pro* melalui dasbor MyVA Anda untuk terus menggunakan asisten! 🚀`;
+      }
 
-    const messageCount = await this.prisma.usageLog.count({
-      where: {
-        userId,
-        actionType: 'WHATSAPP_MESSAGE',
-        createdAt: {
-          gte: todayStart,
+      const totalMessageCount = await this.prisma.usageLog.count({
+        where: {
+          userId,
+          actionType: 'WHATSAPP_MESSAGE',
         },
-      },
-    });
+      });
 
-    if (plan === 'free' && messageCount >= 5) {
-      return `⚠️ *Batas Kuota Chat Terlampaui* ⚠️\n\nAnda telah mencapai batas 5 pesan gratis hari ini. Silakan upgrade ke paket *Basic* atau *Pro* melalui dasbor MyVA Anda untuk menikmati kuota chat tanpa batas! 🚀`;
+      if (totalMessageCount >= 30) {
+        return `⚠️ *Batas Kuota Chat Terlampaui* ⚠️\n\nAnda telah mencapai batas maksimal 30 pesan asisten gratis selama masa uji coba (7-Days Trial). Silakan upgrade ke paket *Basic* atau *Pro* melalui dasbor MyVA Anda untuk menikmati kuota chat tanpa batas! 🚀`;
+      }
     }
 
     // 1. INTENT: SEARCH MEMORIES
