@@ -68,14 +68,21 @@ export class IntentRouterService {
       let scheduledAt = new Date(Date.now() + 60 * 60 * 1000);
       let title = content;
 
-      if (cleanText.includes('besok')) {
-        scheduledAt = new Date();
-        scheduledAt.setDate(scheduledAt.getDate() + 1);
-        scheduledAt.setHours(10, 0, 0, 0); // default to 10:00 AM tomorrow
-        title = content.replace(/besok.*/i, '').trim();
-      } else if (cleanText.includes('nanti')) {
-        scheduledAt = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 hours from now
-        title = content.replace(/nanti.*/i, '').trim();
+      // Extract precise date/time using AI
+      const aiParsed = await this.aiService.parseDateTime(text);
+      if (aiParsed.scheduledAt) {
+        scheduledAt = new Date(aiParsed.scheduledAt);
+        title = aiParsed.title;
+      } else {
+        if (cleanText.includes('besok')) {
+          scheduledAt = new Date();
+          scheduledAt.setDate(scheduledAt.getDate() + 1);
+          scheduledAt.setHours(10, 0, 0, 0); // default to 10:00 AM tomorrow
+          title = content.replace(/besok.*/i, '').trim();
+        } else if (cleanText.includes('nanti')) {
+          scheduledAt = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 hours from now
+          title = content.replace(/nanti.*/i, '').trim();
+        }
       }
 
       const user = await this.prisma.user.findUnique({ where: { id: userId } });
@@ -109,14 +116,21 @@ export class IntentRouterService {
       let scheduledAt = new Date(Date.now() + 60 * 60 * 1000);
       let title = content;
 
-      if (cleanText.includes('besok')) {
-        scheduledAt = new Date();
-        scheduledAt.setDate(scheduledAt.getDate() + 1);
-        scheduledAt.setHours(14, 0, 0, 0); // default to 2:00 PM tomorrow
-        title = content.replace(/besok.*/i, '').trim();
-      } else if (cleanText.includes('nanti')) {
-        scheduledAt = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 hours from now
-        title = content.replace(/nanti.*/i, '').trim();
+      // Extract precise date/time using AI
+      const aiParsed = await this.aiService.parseDateTime(text);
+      if (aiParsed.scheduledAt) {
+        scheduledAt = new Date(aiParsed.scheduledAt);
+        title = aiParsed.title;
+      } else {
+        if (cleanText.includes('besok')) {
+          scheduledAt = new Date();
+          scheduledAt.setDate(scheduledAt.getDate() + 1);
+          scheduledAt.setHours(14, 0, 0, 0); // default to 2:00 PM tomorrow
+          title = content.replace(/besok.*/i, '').trim();
+        } else if (cleanText.includes('nanti')) {
+          scheduledAt = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 hours from now
+          title = content.replace(/nanti.*/i, '').trim();
+        }
       }
 
       const isGcalConnected = user?.gcalConnected || false;

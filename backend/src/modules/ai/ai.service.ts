@@ -237,6 +237,104 @@ export class AIService {
     }
   }
 
+  async parseDateTime(text: string): Promise<{ title: string; scheduledAt: string | null }> {
+    try {
+      const apiKey = this.geminiApiKey;
+      if (!apiKey) {
+        throw new Error('GEMINI_API_KEY is not configured.');
+      }
+
+      const today = new Date();
+      const formatter = new Intl.DateTimeFormat('id-ID', {
+        timeZone: 'Asia/Jakarta',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      });
+
+      const parts = formatter.formatToParts(today);
+      const year = parts.find(p => p.type === 'year')?.value;
+      const month = parts.find(p => p.type === 'month')?.value;
+      const day = parts.find(p => p.type === 'day')?.value;
+      const hour = parts.find(p => p.type === 'hour')?.value;
+      const minute = parts.find(p => p.type === 'minute')?.value;
+      const second = parts.find(p => p.type === 'second')?.value;
+
+      const jakartaTimeString = `${year}-${month}-${day}T${hour}:${minute}:${second}`;
+      const dayOfWeek = today.toLocaleDateString('id-ID', { weekday: 'long', timeZone: 'Asia/Jakarta' });
+
+      const prompt = `You are a helper that extracts date, time, and title from a user request.
+Reference date/time in timezone Asia/Jakarta (WIB) is: ${jakartaTimeString} (Day: ${dayOfWeek}).
+
+User message: "${text}"
+
+Instructions:
+1. Extract the title/description of the event/reminder. Clean it from time-related words (like "besok", "nanti", "jam 3", "hari jumat").
+2. Calculate the exact scheduled date and time based on the reference time.
+3. Return the result in JSON format:
+{
+  "title": "Cleaned Event Title",
+  "scheduledAt": "YYYY-MM-DDTHH:mm:ss" 
+}
+Do NOT include timezone offset in scheduledAt string. Keep it in local Asia/Jakarta date/time format (YYYY-MM-DDTHH:mm:ss). If no time is specified, default to 1 hour from the reference time.
+`;
+
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      const payload = {
+        contents: [
+          {
+            parts: [{ text: prompt }]
+          }
+        ],
+        generationConfig: {
+          responseMimeType: 'application/json',
+        },
+      };
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Gemini API responded with status ${response.status}`);
+      }
+
+      const data = (await response.json()) as any;
+      const jsonStr = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+      const parsed = JSON.parse(jsonStr);
+
+      if (parsed.scheduledAt) {
+        const isoStringWithOffset = parsed.scheduledAt.includes('+') || parsed.scheduledAt.endsWith('Z')
+          ? parsed.scheduledAt
+          : `${parsed.scheduledAt}+07:00`;
+        
+        return {
+          title: parsed.title || text,
+          scheduledAt: new Date(isoStringWithOffset).toISOString(),
+        };
+      }
+
+      return {
+        title: text,
+        scheduledAt: null,
+      };
+    } catch (error) {
+      this.logger.error(`Gemini ParseDateTime Error: ${error.message}`);
+      return {
+        title: text,
+        scheduledAt: null,
+      };
+    }
+  }
+
   async generateEmbedding(text: string): Promise<number[]> {
     try {
       const apiKey = this.geminiApiKey;
