@@ -772,5 +772,91 @@ Return response strictly in this JSON format:
       };
     }
   }
+
+  async extractClarifiedParameter(
+    pendingIntent: string,
+    pendingData: any,
+    replyText: string,
+  ): Promise<any> {
+    try {
+      const apiKey = this.geminiApiKey;
+      if (!apiKey) {
+        throw new Error('GEMINI_API_KEY is not configured.');
+      }
+
+      const today = new Date();
+      const formatter = new Intl.DateTimeFormat('id-ID', {
+        timeZone: 'Asia/Jakarta',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      });
+
+      const parts = formatter.formatToParts(today);
+      const year = parts.find(p => p.type === 'year')?.value;
+      const month = parts.find(p => p.type === 'month')?.value;
+      const day = parts.find(p => p.type === 'day')?.value;
+      const hour = parts.find(p => p.type === 'hour')?.value;
+      const minute = parts.find(p => p.type === 'minute')?.value;
+      const second = parts.find(p => p.type === 'second')?.value;
+
+      const jakartaTimeString = `${year}-${month}-${day}T${hour}:${minute}:${second}`;
+      const dayOfWeek = today.toLocaleDateString('id-ID', { weekday: 'long', timeZone: 'Asia/Jakarta' });
+
+      const prompt = `You are an AI Parameter Extractor.
+Reference date/time (Asia/Jakarta): ${jakartaTimeString} (Day: ${dayOfWeek}).
+
+The user previously initiated a "${pendingIntent}" action with the following data:
+${JSON.stringify(pendingData)}
+
+But some mandatory parameter was missing. The user was asked for clarification and they just replied with: "${replyText}"
+
+Instructions:
+1. Extract the missing parameter from the user's reply.
+- If the action is "CREATE_REMINDER" or "CREATE_CALENDAR_EVENT", extract "scheduledAt" as an ISO-8601 date-time string (YYYY-MM-DDTHH:mm:ss) without timezone/offset. Calculate it based on the reference time.
+- If the action is "TRACK_EXPENSE", extract "amount" as a numeric value (e.g. "25rb" -> 25000, "150.000" -> 150000).
+2. Return the result strictly in this JSON format:
+{
+  "scheduledAt": "...",
+  "amount": 0
+}
+`;
+
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      const payload = {
+        contents: [
+          {
+            parts: [{ text: prompt }]
+          }
+        ],
+        generationConfig: {
+          responseMimeType: 'application/json',
+        },
+      };
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Gemini API responded with status ${response.status}`);
+      }
+
+      const data = (await response.json()) as any;
+      const jsonStr = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+      return JSON.parse(jsonStr);
+    } catch (error) {
+      this.logger.error(`Gemini extractClarifiedParameter Error: ${error.message}`);
+      return {};
+    }
+  }
 }
 

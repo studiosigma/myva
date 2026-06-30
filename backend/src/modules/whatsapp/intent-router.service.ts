@@ -13,6 +13,11 @@ import { google } from 'googleapis';
 @Injectable()
 export class IntentRouterService {
   private readonly logger = new Logger(IntentRouterService.name);
+  private pendingActions = new Map<string, {
+    intent: 'CREATE_REMINDER' | 'CREATE_CALENDAR_EVENT' | 'CREATE_TASK' | 'TRACK_EXPENSE';
+    extracted: any;
+    timestamp: number;
+  }>();
 
   constructor(
     private readonly memoryService: MemoryService,
@@ -28,6 +33,18 @@ export class IntentRouterService {
   async routeMessage(userId: string, text: string, persona?: string): Promise<string> {
     const cleanText = text.trim().toLowerCase();
     this.logger.log(`Routing message for user ${userId}: "${text}"`);
+
+    // Check for pending actions first
+    const now = Date.now();
+    const pending = this.pendingActions.get(userId);
+    if (pending && (now - pending.timestamp < 5 * 60 * 1000)) {
+      if (/(batal|cancel|tidak jadi|gak jadi)/i.test(cleanText)) {
+        this.pendingActions.delete(userId);
+        return `❌ Pembuatan ${pending.intent === 'TRACK_EXPENSE' ? 'catatan pengeluaran' : 'pengingat/agenda'} telah dibatalkan.`;
+      }
+      this.pendingActions.delete(userId);
+      return this.resolvePendingAction(userId, text, pending);
+    }
 
     // Fetch user and plan
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
@@ -83,13 +100,20 @@ export class IntentRouterService {
 
       // 2. INTENT: CREATE REMINDER
       if (intent === 'CREATE_REMINDER') {
-        let scheduledAt = new Date(Date.now() + 60 * 60 * 1000);
-        let title = extracted?.title || text;
-        
-        if (extracted?.scheduledAt) {
-          scheduledAt = new Date(`${extracted.scheduledAt}+07:00`);
+        const title = extracted?.title || text;
+        if (!extracted?.scheduledAt) {
+          this.pendingActions.set(userId, {
+            intent: 'CREATE_REMINDER',
+            extracted: {
+              title: title || 'WhatsApp Reminder',
+              description: extracted?.description || '',
+            },
+            timestamp: Date.now(),
+          });
+          return `Siap! Kapan Anda ingin diingatkan untuk *"${title || 'WhatsApp Reminder'}"*? (contoh: "besok jam 10 pagi", "nanti malam jam 8")`;
         }
 
+        const scheduledAt = new Date(`${extracted.scheduledAt}+07:00`);
         const isGcalConnected = user?.gcalConnected || false;
         const reminder = await this.reminderService.create(userId, {
           title: title || 'WhatsApp Reminder',
@@ -107,15 +131,23 @@ export class IntentRouterService {
         if (plan === 'free') {
           return `⚠️ *Fitur Penjadwalan Terbatas* ⚠️\n\nFitur pembuatan event & Google Meet link via WhatsApp hanya tersedia pada paket *Basic* atau *Pro*. Silakan upgrade paket Anda di dasbor MyVA! 🗓️`;
         }
-        let scheduledAt = new Date(Date.now() + 60 * 60 * 1000);
-        let title = extracted?.title || text;
-
-        if (extracted?.scheduledAt) {
-          scheduledAt = new Date(`${extracted.scheduledAt}+07:00`);
-        }
-
+        const title = extracted?.title || text;
         const isMeeting = extracted?.isMeeting || false;
 
+        if (!extracted?.scheduledAt) {
+          this.pendingActions.set(userId, {
+            intent: 'CREATE_CALENDAR_EVENT',
+            extracted: {
+              title: title || 'Acara Kalender',
+              description: extracted?.description || '',
+              isMeeting,
+            },
+            timestamp: Date.now(),
+          });
+          return `Baik! Kapan jadwal acara *"${title || 'Acara Kalender'}"* tersebut? (contoh: "jumat depan jam 2 siang", "besok jam 9 pagi")`;
+        }
+
+        const scheduledAt = new Date(`${extracted.scheduledAt}+07:00`);
         const reminder = await this.reminderService.create(userId, {
           title: `[Calendar] ${title || 'Acara Kalender'}`,
           scheduledAt: scheduledAt.toISOString(),
@@ -201,21 +233,31 @@ export class IntentRouterService {
         const description = extracted?.description || text;
         const category = extracted?.category || 'Other';
 
-        if (amount > 0) {
-          const expense = await this.expenseService.create(userId, {
-            amount,
-            description,
-            category,
+        if (amount <= 0) {
+          this.pendingActions.set(userId, {
+            intent: 'TRACK_EXPENSE',
+            extracted: {
+              description,
+              category,
+            },
+            timestamp: Date.now(),
           });
-
-          const formattedAmount = new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-            maximumFractionDigits: 0
-          }).format(expense.amount);
-
-          return `💸 *Pengeluaran Berhasil Dicatat!*\n\n*Deskripsi:* ${expense.description}\n*Jumlah:* ${formattedAmount}\n*Kategori:* ${expense.category}\n\n_Catatan keuangan Anda telah diperbarui di dashboard._`;
+          return `Siap! Berapa nominal pengeluaran untuk *"${description}"*? (contoh: "25rb", "150.000")`;
         }
+
+        const expense = await this.expenseService.create(userId, {
+          amount,
+          description,
+          category,
+        });
+
+        const formattedAmount = new Intl.NumberFormat('id-ID', {
+          style: 'currency',
+          currency: 'IDR',
+          maximumFractionDigits: 0
+        }).format(expense.amount);
+
+        return `💸 *Pengeluaran Berhasil Dicatat!*\n\n*Deskripsi:* ${expense.description}\n*Jumlah:* ${formattedAmount}\n*Kategori:* ${expense.category}\n\n_Catatan keuangan Anda telah diperbarui di dashboard._`;
       }
 
       // 4. INTENT: CREATE MEMORY (NOTE)
@@ -626,6 +668,134 @@ export class IntentRouterService {
     description = description.charAt(0).toUpperCase() + description.slice(1);
 
     return { amount, description, category };
+  }
+
+  private async resolvePendingAction(
+    userId: string,
+    text: string,
+    pending: { intent: string; extracted: any; timestamp: number }
+  ): Promise<string> {
+    this.logger.log(`Resolving pending action for user ${userId}: intent=${pending.intent}`);
+    
+    // Call Gemini to extract the clarified/missing parameter based on reply text
+    const clarified = await this.aiService.extractClarifiedParameter(pending.intent, pending.extracted, text);
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    if (pending.intent === 'CREATE_REMINDER') {
+      const scheduledAtStr = clarified?.scheduledAt;
+      if (!scheduledAtStr) {
+        return `Format waktu tidak dipahami. Batal membuat pengingat. Silakan coba lagi dengan format yang lebih jelas.`;
+      }
+      
+      const scheduledAt = new Date(`${scheduledAtStr}+07:00`);
+      const isGcalConnected = user?.gcalConnected || false;
+      
+      const reminder = await this.reminderService.create(userId, {
+        title: pending.extracted.title,
+        scheduledAt: scheduledAt.toISOString(),
+      });
+
+      if (isGcalConnected) {
+        try {
+          const oauth2Client = await this.googleApiService.getClientForUser(userId);
+          const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+          await calendar.events.insert({
+            calendarId: 'primary',
+            requestBody: {
+              summary: reminder.title,
+              description: `WhatsApp Reminder (MyVA)`,
+              start: { dateTime: scheduledAt.toISOString() },
+              end: { dateTime: new Date(scheduledAt.getTime() + 30 * 60 * 1000).toISOString() },
+            },
+          });
+        } catch (err) {
+          this.logger.error(`Google Calendar sync failed: ${err.message}`);
+        }
+      }
+
+      const timeStr = scheduledAt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' });
+      const dateStr = scheduledAt.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Jakarta' });
+      return `⏰ *Pengingat Berhasil Dibuat!*\n\n*Judul:* ${reminder.title}\n*Waktu:* ${dateStr} pukul ${timeStr} WIB\n\n_Asisten akan mengirimkan notifikasi tepat pada waktunya._`;
+    }
+
+    if (pending.intent === 'CREATE_CALENDAR_EVENT') {
+      const scheduledAtStr = clarified?.scheduledAt;
+      if (!scheduledAtStr) {
+        return `Format waktu tidak dipahami. Batal membuat agenda kalender. Silakan coba lagi dengan format yang lebih jelas.`;
+      }
+      
+      const scheduledAt = new Date(`${scheduledAtStr}+07:00`);
+      const isGcalConnected = user?.gcalConnected || false;
+      const isMeeting = pending.extracted.isMeeting || false;
+
+      const reminder = await this.reminderService.create(userId, {
+        title: pending.extracted.title,
+        scheduledAt: scheduledAt.toISOString(),
+      });
+
+      let gcalLink = '';
+      if (isGcalConnected) {
+        try {
+          const oauth2Client = await this.googleApiService.getClientForUser(userId);
+          const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+          const eventBody: any = {
+            summary: reminder.title,
+            description: `WhatsApp Scheduled Event (MyVA)`,
+            start: { dateTime: scheduledAt.toISOString() },
+            end: { dateTime: new Date(scheduledAt.getTime() + 60 * 60 * 1000).toISOString() },
+          };
+
+          if (isMeeting) {
+            eventBody.conferenceData = {
+              createRequest: {
+                requestId: `meet-${reminder.id}`,
+                conferenceSolutionKey: { type: 'hangoutsMeet' },
+              },
+            };
+          }
+
+          const event = await calendar.events.insert({
+            calendarId: 'primary',
+            requestBody: eventBody,
+            conferenceDataVersion: isMeeting ? 1 : 0,
+          });
+
+          gcalLink = event.data.htmlLink || '';
+        } catch (err) {
+          this.logger.error(`Google Calendar Event sync failed: ${err.message}`);
+        }
+      }
+
+      const timeStr = scheduledAt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' });
+      const dateStr = scheduledAt.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Jakarta' });
+      
+      return `📅 *Acara Kalender Dibuat!*\n\n*Judul:* ${reminder.title}\n*Waktu:* ${dateStr} pukul ${timeStr} WIB\n${
+        isGcalConnected ? `\n🔗 *Google Calendar:* Terhubung\n` : ''
+      }_Agenda berhasil ditambahkan ke jadwal Anda._`;
+    }
+
+    if (pending.intent === 'TRACK_EXPENSE') {
+      const amount = clarified?.amount;
+      if (!amount || isNaN(amount)) {
+        return `Format nominal uang tidak dipahami. Batal mencatat pengeluaran.`;
+      }
+
+      const expense = await this.expenseService.create(userId, {
+        amount,
+        description: pending.extracted.description,
+        category: pending.extracted.category,
+      });
+
+      const formattedAmount = new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        maximumFractionDigits: 0
+      }).format(expense.amount);
+
+      return `💸 *Pengeluaran Berhasil Dicatat!*\n\n*Deskripsi:* ${expense.description}\n*Jumlah:* ${formattedAmount}\n*Kategori:* ${expense.category}\n\n_Catatan keuangan Anda telah diperbarui._`;
+    }
+
+    return `Maaf, instruksi sebelumnya tidak bisa dilanjutkan.`;
   }
 
   private getHelpGuide(): string {
