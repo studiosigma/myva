@@ -32,6 +32,59 @@ export class AIService {
     this.geminiApiKey = this.configService.get<string>('GEMINI_API_KEY') || '';
   }
 
+  private async postToGemini(url: string, payload: any): Promise<any> {
+    let response: Response;
+    const maxAttempts = 3;
+    let delay = 1500;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (response.ok) {
+          break;
+        }
+
+        if (response.status === 503 || response.status === 429 || response.status >= 500) {
+          this.logger.warn(`Gemini API responded with status ${response.status} (Attempt ${attempt}/${maxAttempts}). Retrying in ${delay}ms...`);
+          if (attempt < maxAttempts) {
+            await new Promise((resolve) => setTimeout(resolve, delay));
+            delay *= 2.5;
+            continue;
+          }
+        }
+        break;
+      } catch (err) {
+        this.logger.warn(`Fetch attempt ${attempt} failed: ${err.message}`);
+        if (attempt < maxAttempts) {
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          delay *= 2.5;
+          continue;
+        }
+        throw err;
+      }
+    }
+
+    if (!response || !response.ok) {
+      const statusStr = response ? `${response.status}: ${response.statusText}` : 'Network Error';
+      let errorDetails = '';
+      if (response) {
+        try {
+          errorDetails = await response.text();
+        } catch (e) {}
+      }
+      throw new Error(`Gemini API responded with status ${statusStr}. Details: ${errorDetails}`);
+    }
+
+    return response.json();
+  }
+
   async chat(
     messages: OpenAI.Chat.ChatCompletionMessageParam[],
     persona?: string,
@@ -104,56 +157,7 @@ export class AIService {
         };
       }
 
-      let response: Response;
-      const maxAttempts = 3;
-      let delay = 1000;
-
-      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-        try {
-          response = await fetch(url, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload),
-          });
-
-          if (response.ok) {
-            break;
-          }
-
-          if (response.status === 503 || response.status === 429 || response.status >= 500) {
-            this.logger.warn(`Gemini API responded with status ${response.status} (Attempt ${attempt}/${maxAttempts}). Retrying in ${delay}ms...`);
-            if (attempt < maxAttempts) {
-              await new Promise((resolve) => setTimeout(resolve, delay));
-              delay *= 2;
-              continue;
-            }
-          }
-          break;
-        } catch (err) {
-          this.logger.warn(`Fetch attempt ${attempt} failed: ${err.message}`);
-          if (attempt < maxAttempts) {
-            await new Promise((resolve) => setTimeout(resolve, delay));
-            delay *= 2;
-            continue;
-          }
-          throw err;
-        }
-      }
-
-      if (!response || !response.ok) {
-        const statusStr = response ? `${response.status}: ${response.statusText}` : 'Network Error';
-        let errorDetails = '';
-        if (response) {
-          try {
-            errorDetails = await response.text();
-          } catch (_) {}
-        }
-        throw new Error(`Gemini API responded with status ${statusStr}. Details: ${errorDetails}`);
-      }
-
-      const data = (await response.json()) as any;
+      const data = await this.postToGemini(url, payload);
       const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
       return textResponse || 'Maaf, saya tidak bisa merespons saat ini.';
     } catch (error) {
@@ -751,19 +755,7 @@ Return response strictly in this JSON format:
         },
       };
 
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Gemini API responded with status ${response.status}`);
-      }
-
-      const data = (await response.json()) as any;
+      const data = await this.postToGemini(url, payload);
       const jsonStr = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
       const parsed = JSON.parse(jsonStr);
 
@@ -848,19 +840,7 @@ Instructions:
         },
       };
 
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Gemini API responded with status ${response.status}`);
-      }
-
-      const data = (await response.json()) as any;
+      const data = await this.postToGemini(url, payload);
       const jsonStr = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
       return JSON.parse(jsonStr);
     } catch (error) {
