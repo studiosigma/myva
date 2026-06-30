@@ -302,6 +302,22 @@ export class IntentRouterService {
       contextPrompt = `Berikut adalah beberapa informasi relevan dari Memory Center (Second Brain) pengguna yang bisa membantu Anda menjawab pertanyaan mereka:\n\n${contextItems}\n\nInstruksi: Gunakan informasi di atas jika relevan untuk menjawab pertanyaan pengguna. Berikan jawaban yang natural dalam bahasa yang sama dengan pengguna, dan sebutkan bahwa informasi ini berasal dari catatan/link yang mereka simpan jika sesuai. Jika informasi di atas tidak relevan, abaikan saja dan jawablah secara normal.`;
     }
 
+    // Retrieve user expenses if the query is financial/money related
+    const isExpenseQuery = /(pengeluaran|jajan|belanja|keuangan|finansial|biaya|expense|spend|transaksi|beli|saldo|duit|uang|outlay)/i.test(text);
+    if (isExpenseQuery) {
+      const expenses = await this.expenseService.findAll(userId);
+      if (expenses && expenses.length > 0) {
+        const expenseList = expenses.map(e => {
+          const dateStr = new Date(e.createdAt).toLocaleDateString('id-ID', { timeZone: 'Asia/Jakarta' });
+          return `- Tanggal: ${dateStr}, Deskripsi: ${e.description}, Kategori: ${e.category}, Jumlah: Rp ${e.amount.toLocaleString('id-ID')}`;
+        }).join('\n');
+
+        const expenseContext = `\n\n[Data Keuangan/Pengeluaran Pengguna]\nBerikut adalah seluruh riwayat pengeluaran yang pernah dicatat oleh pengguna:\n${expenseList}\n\nInstruksi: Gunakan data pengeluaran di atas untuk menjawab pertanyaan finansial/pengeluaran pengguna dengan akurat. Jika pengguna menanyakan total pengeluaran dalam jangka waktu tertentu (misal: hari ini, minggu ini, bulan ini), hitunglah totalnya berdasarkan tanggal transaksi yang tertera di atas secara presisi. Jawab dengan gaya singkat dan jelas.`;
+
+        contextPrompt = contextPrompt ? `${contextPrompt}\n\n${expenseContext}` : expenseContext;
+      }
+    }
+
     // Retrieve conversation history
     const conversation = await this.prisma.conversation.findFirst({
       where: { userId },
