@@ -101,9 +101,6 @@ export class AIService {
         payload.systemInstruction = {
           parts: [{ text: systemInstructionText }]
         };
-        payload.system_instruction = {
-          parts: [{ text: systemInstructionText }]
-        };
       }
 
       let response: Response;
@@ -146,7 +143,13 @@ export class AIService {
 
       if (!response || !response.ok) {
         const statusStr = response ? `${response.status}: ${response.statusText}` : 'Network Error';
-        throw new Error(`Gemini API responded with status ${statusStr}`);
+        let errorDetails = '';
+        if (response) {
+          try {
+            errorDetails = await response.text();
+          } catch (_) {}
+        }
+        throw new Error(`Gemini API responded with status ${statusStr}. Details: ${errorDetails}`);
       }
 
       const data = (await response.json()) as any;
