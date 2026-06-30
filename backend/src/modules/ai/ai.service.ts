@@ -644,7 +644,10 @@ Do NOT include timezone offset in scheduledAt string. Keep it in local Asia/Jaka
     }
   }
 
-  async classifyIntent(text: string): Promise<IntentClassification> {
+  async classifyIntent(
+    text: string,
+    history?: { role: 'user' | 'assistant'; content: string }[],
+  ): Promise<IntentClassification> {
     try {
       const apiKey = this.geminiApiKey;
       if (!apiKey) {
@@ -674,10 +677,17 @@ Do NOT include timezone offset in scheduledAt string. Keep it in local Asia/Jaka
       const jakartaTimeString = `${year}-${month}-${day}T${hour}:${minute}:${second}`;
       const dayOfWeek = today.toLocaleDateString('id-ID', { weekday: 'long', timeZone: 'Asia/Jakarta' });
 
+      const historyText = history && history.length > 0
+        ? `Here is the recent conversation history for context:
+${history.map(h => `${h.role === 'user' ? 'User' : 'Assistant'}: "${h.content}"`).join('\n')}
+
+`
+        : '';
+
       const prompt = `You are an AI Intent Classifier and Parameter Extractor for MyVA (WhatsApp personal assistant).
 Reference date/time in timezone Asia/Jakarta (WIB) is: ${jakartaTimeString} (Day: ${dayOfWeek}).
 
-User message: "${text}"
+${historyText}User message: "${text}"
 
 Instructions:
 1. Classify the user's intent into exactly one of these categories:

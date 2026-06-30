@@ -80,8 +80,28 @@ export class IntentRouterService {
       return this.getHelpGuide();
     }
 
+    // Retrieve conversation history from DB for classification context
+    const conversation = await this.prisma.conversation.findFirst({
+      where: { userId },
+      include: {
+        messages: {
+          orderBy: { createdAt: 'desc' },
+          take: 6,
+        },
+      },
+    });
+
+    const history = conversation
+      ? conversation.messages
+          .map((m) => ({
+            role: m.senderType === 'user' ? ('user' as const) : ('assistant' as const),
+            content: m.text || '',
+          }))
+          .reverse()
+      : [];
+
     // Call Gemini 2.5 Flash for smart intent classification
-    const classification = await this.aiService.classifyIntent(text);
+    const classification = await this.aiService.classifyIntent(text, history);
     const { intent, confidence, extracted } = classification;
     this.logger.log(`Classified intent: ${intent} (Confidence: ${confidence})`);
 
@@ -120,8 +140,39 @@ export class IntentRouterService {
           scheduledAt: scheduledAt.toISOString(),
         });
 
+        let syncError = false;
         if (isGcalConnected) {
+          try {
+            const oauth2Client = await this.googleApiService.getClientForUser(userId);
+            const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+            const endDateTime = new Date(scheduledAt.getTime() + 30 * 60 * 1000);
+
+            await calendar.events.insert({
+              calendarId: 'primary',
+              requestBody: {
+                summary: reminder.title,
+                description: `WhatsApp Reminder (MyVA)`,
+                start: {
+                  dateTime: scheduledAt.toISOString(),
+                  timeZone: 'Asia/Jakarta',
+                },
+                end: {
+                  dateTime: endDateTime.toISOString(),
+                  timeZone: 'Asia/Jakarta',
+                },
+              },
+            });
+            this.logger.log(`Successfully synced reminder "${reminder.title}" to Google Calendar.`);
+          } catch (error) {
+            this.logger.error(`Error syncing reminder to Google Calendar: ${error.message}`);
+            syncError = true;
+          }
+        }
+
+        if (isGcalConnected && !syncError) {
           return `⏰ Reminder berhasil dibuat & disinkronkan ke Google Calendar!\n\n*Reminder:* ${reminder.title}\n*Waktu:* ${reminder.scheduledAt.toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}`;
+        } else if (syncError) {
+          return `⏰ Reminder berhasil dibuat secara lokal! (Koneksi Google Bermasalah)\n\n*Reminder:* ${reminder.title}\n*Waktu:* ${reminder.scheduledAt.toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}\n\n_Catatan: Gagal menyinkronkan ke Google Calendar. Silakan hubungkan kembali akun Google Anda di dasbor Settings._`;
         }
         return `⏰ Reminder berhasil dibuat secara lokal!\n\n*Reminder:* ${reminder.title}\n*Waktu:* ${reminder.scheduledAt.toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}`;
       }
@@ -417,7 +468,7 @@ export class IntentRouterService {
     }
 
     // Retrieve conversation history
-    const conversation = await this.prisma.conversation.findFirst({
+    const fallbackConversation = await this.prisma.conversation.findFirst({
       where: { userId },
       include: {
         messages: {
@@ -427,7 +478,7 @@ export class IntentRouterService {
       },
     });
 
-    const recentMessages = conversation?.messages ? [...conversation.messages].reverse() : [];
+    const recentMessages = fallbackConversation?.messages ? [...fallbackConversation.messages].reverse() : [];
 
     const messages: any[] = [];
     if (contextPrompt) {
