@@ -340,8 +340,28 @@ export class IntentRouterService {
           phone,
         });
 
+        let syncError = false;
         if (isContactsSyncEnabled) {
+          try {
+            const oauth2Client = await this.googleApiService.getClientForUser(userId);
+            const people = google.people({ version: 'v1', auth: oauth2Client });
+            await people.people.createContact({
+              requestBody: {
+                names: [{ givenName: name }],
+                phoneNumbers: [{ value: phone }],
+              },
+            });
+            this.logger.log(`Successfully synced contact "${name}" to Google Contacts.`);
+          } catch (error) {
+            this.logger.error(`Error syncing contact to Google Contacts: ${error.message}`);
+            syncError = true;
+          }
+        }
+
+        if (isContactsSyncEnabled && !syncError) {
           return `👤 Kontak berhasil disimpan & disinkronkan ke Google Contacts!\n\n*Nama:* ${contact.name}\n*No. HP:* ${contact.phone}`;
+        } else if (syncError) {
+          return `👤 Kontak berhasil disimpan secara lokal! (Koneksi Google Bermasalah)\n\n*Nama:* ${contact.name}\n*No. HP:* ${contact.phone}\n\n_Catatan: Gagal menyinkronkan ke Google Contacts. Silakan hubungkan kembali akun Google Anda di dasbor Settings._`;
         }
         return `👤 Kontak berhasil disimpan secara lokal!\n\n*Nama:* ${contact.name}\n*No. HP:* ${contact.phone}\n\n_Catatan: Sambungkan integrasi Google Contacts di dasbor Settings untuk sinkronisasi otomatis._`;
       }
@@ -357,11 +377,61 @@ export class IntentRouterService {
           return `📧 *Gmail Assistant belum aktif.*\n\nSilakan sambungkan integrasi Gmail Anda di dasbor Settings untuk membaca dan mencari email langsung lewat WhatsApp.`;
         }
 
-        const query = extracted?.query || '';
-        if (query) {
-          return `📧 *Hasil Pencarian Gmail untuk "${query}"*:\n\n1. *Dari:* John Doe <john@javacoffee.co>\n   *Subjek:* Coffee supplier shipment update\n   *Rangkuman:* Pengiriman biji kopi Arabica Preanger dijadwalkan tiba hari Senin depan. Dokumen invoice terlampir.\n\n2. *Dari:* Vercel <noreply@vercel.com>\n   *Subjek:* [Vercel] Deployment Successful\n   *Rangkuman:* Proyek myva-backend berhasil di-deploy ke production.\n\n_Asisten berhasil menyaring email terpenting Anda._`;
-        } else {
-          return `📧 *Email Terpenting Hari Ini (Gmail)*:\n\n1. *Dari:* Sarah Connor <sarah@cyberdyne.io>\n   *Subjek:* Re: Draft Proposal Meeting\n   *Waktu:* 08:15 WIB\n   *Rangkuman:* Sarah menyetujui draft usulan kerja sama sistem AI asisten virtual.\n\n2. *Dari:* Midtrans <support@midtrans.com>\n   *Subjek:* Monthly Invoice Receipt\n   *Waktu:* Kemarin\n   *Rangkuman:* Pembayaran biaya langganan bulanan server sukses diproses.`;
+        try {
+          const oauth2Client = await this.googleApiService.getClientForUser(userId);
+          const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+          const query = extracted?.query || '';
+          
+          const listRes = await gmail.users.messages.list({
+            userId: 'me',
+            maxResults: 3,
+            q: query || 'label:INBOX',
+          });
+
+          const messages = listRes.data.messages || [];
+          if (messages.length === 0) {
+            return query 
+              ? `📧 *Gmail Assistant*\n\nTidak ditemukan email yang cocok dengan pencarian "${query}".`
+              : `📧 *Gmail Assistant*\n\nKotak masuk Anda bersih! Tidak ada email baru.`;
+          }
+
+          const emailItems = [];
+          for (const msg of messages) {
+            const detail = await gmail.users.messages.get({
+              userId: 'me',
+              id: msg.id,
+              format: 'metadata',
+              metadataHeaders: ['From', 'Subject', 'Date'],
+            });
+
+            const headers = detail.data.payload?.headers || [];
+            const fromHeader = headers.find(h => h.name?.toLowerCase() === 'from')?.value || 'Unknown';
+            const subjectHeader = headers.find(h => h.name?.toLowerCase() === 'subject')?.value || '(No Subject)';
+            const dateHeader = headers.find(h => h.name?.toLowerCase() === 'date')?.value || '';
+            const snippet = detail.data.snippet || '';
+
+            // Clean up the from address for cleaner display
+            const cleanFrom = fromHeader.replace(/<[^>]*>/, '').trim();
+            const dateStr = dateHeader ? new Date(dateHeader).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }) : '';
+
+            emailItems.push({
+              from: cleanFrom,
+              subject: subjectHeader,
+              time: dateStr ? `${dateStr} WIB` : '',
+              snippet,
+            });
+          }
+
+          const formattedList = emailItems
+            .map((item, idx) => `${idx + 1}. *Dari:* ${item.from}\n   *Subjek:* ${item.subject}${item.time ? ` (${item.time})` : ''}\n   *Snippet:* ${item.snippet}`)
+            .join('\n\n');
+
+          return query
+            ? `📧 *Hasil Pencarian Gmail untuk "${query}"*:\n\n${formattedList}\n\n_Asisten berhasil menyaring email terpenting Anda._`
+            : `📧 *Email Terpenting Hari Ini (Gmail)*:\n\n${formattedList}`;
+        } catch (error) {
+          this.logger.error(`Error fetching real emails from Gmail: ${error.message}`);
+          return `📧 *Gmail Assistant*\n\nGagal membaca email dari akun Gmail Anda. Silakan hubungkan kembali integrasi Gmail Anda di dasbor Settings.`;
         }
       }
 
