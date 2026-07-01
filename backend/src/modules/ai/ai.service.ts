@@ -485,7 +485,31 @@ Do NOT include timezone offset in scheduledAt string. Keep it in local Asia/Jaka
         where: { userId },
       });
 
-      if (memories.length === 0) return [];
+      // Fetch user's files with summaries
+      const files = await this.prisma.file.findMany({
+        where: {
+          userId,
+          NOT: {
+            summary: null,
+          },
+        },
+      });
+
+      const fileMemories = files.map(file => ({
+        id: file.id,
+        userId: file.userId,
+        title: `File: ${file.filename}`,
+        content: `Ringkasan: ${file.summary || ''}\nPoin Utama:\n${(file.keyPoints || []).join('\n')}\nRekomendasi Tindakan:\n${(file.actionItems || []).join('\n')}`,
+        category: 'Files',
+        createdAt: file.createdAt,
+      }));
+
+      const combined = [
+        ...memories,
+        ...fileMemories,
+      ];
+
+      if (combined.length === 0) return [];
 
       const cleanQuery = query.toLowerCase().trim();
       const queryTokens = this.tokenizeAndFilter(cleanQuery);
@@ -494,7 +518,7 @@ Do NOT include timezone offset in scheduledAt string. Keep it in local Asia/Jaka
         // Fallback to basic case-insensitive matching if the query only consists of stop words
         const basicWords = cleanQuery.split(/\s+/).filter(w => w.length > 0);
         if (basicWords.length === 0) return [];
-        return memories
+        return combined
           .map((mem) => {
             const text = `${mem.title} ${mem.content} ${mem.category}`.toLowerCase();
             let score = 0;
@@ -511,13 +535,13 @@ Do NOT include timezone offset in scheduledAt string. Keep it in local Asia/Jaka
           .map(({ score, ...mem }) => mem);
       }
 
-      const N = memories.length;
+      const N = combined.length;
 
       // Calculate Document Frequency (DF) for each query token
       const dfMap: Record<string, number> = {};
       queryTokens.forEach((token) => {
         let count = 0;
-        memories.forEach((mem) => {
+        combined.forEach((mem) => {
           const text = `${mem.title} ${mem.content} ${mem.category}`.toLowerCase();
           if (text.includes(token)) {
             count++;
@@ -526,7 +550,7 @@ Do NOT include timezone offset in scheduledAt string. Keep it in local Asia/Jaka
         dfMap[token] = count;
       });
 
-      const scoredMemories = memories.map((mem) => {
+      const scoredMemories = combined.map((mem) => {
         const titleLower = mem.title.toLowerCase();
         const contentLower = mem.content.toLowerCase();
         const categoryLower = mem.category.toLowerCase();
