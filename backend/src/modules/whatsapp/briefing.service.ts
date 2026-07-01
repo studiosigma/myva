@@ -14,7 +14,7 @@ export class BriefingService implements OnApplicationBootstrap {
   ) {}
 
   onApplicationBootstrap() {
-    this.logger.log('Daily Briefing & Follow Up Scheduler initialized. Checking intervals every 60 seconds.');
+    this.logger.log('Daily Briefing, Follow Up & Deadline Alert Scheduler initialized. Checking intervals every 60 seconds.');
     // Run interval check every 60 seconds
     setInterval(() => {
       this.checkAndSendBriefings().catch(err => {
@@ -22,6 +22,9 @@ export class BriefingService implements OnApplicationBootstrap {
       });
       this.checkAndSendFollowUps().catch(err => {
         this.logger.error(`Error checking smart follow ups: ${err.message}`);
+      });
+      this.checkAndSendDeadlineAlerts().catch(err => {
+        this.logger.error(`Error checking deadline alerts: ${err.message}`);
       });
     }, 60000);
   }
@@ -260,6 +263,91 @@ Format pesan menggunakan bahasa Indonesia yang ramah, langsung pada sasaran, dan
         // Delay 2 seconds between users to prevent hitting the Gemini API RPM limit
         await new Promise(resolve => setTimeout(resolve, 2000));
       }
+    }
+  }
+
+  async checkAndSendDeadlineAlerts(): Promise<void> {
+    const now = new Date();
+    const currentMinutes = String(now.getMinutes()).padStart(2, '0');
+
+    // Run deadline checks every 15 minutes (at :00, :15, :30, :45)
+    if (!['00', '15', '30', '45'].includes(currentMinutes)) return;
+
+    this.logger.log('Checking for tasks with approaching deadlines...');
+
+    const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
+
+    const tasks = await this.prisma.task.findMany({
+      where: {
+        status: { in: ['todo', 'doing'] },
+        deadline: {
+          gte: now,
+          lte: oneHourFromNow,
+        },
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    for (const task of tasks) {
+      if (!task.user?.waNumber) continue;
+
+      const deadlineDate = new Date(task.deadline!);
+      const diffMs = deadlineDate.getTime() - now.getTime();
+      const diffMinutes = Math.round(diffMs / 60000);
+
+      let timeRemaining: string;
+      if (diffMinutes >= 60) {
+        timeRemaining = '~1 jam lagi';
+      } else if (diffMinutes >= 30) {
+        timeRemaining = `${diffMinutes} menit lagi`;
+      } else {
+        timeRemaining = `${diffMinutes} menit lagi`;
+      }
+
+      const priorityEmoji = task.priority === 'high' ? '🔴' : task.priority === 'low' ? '🟢' : '🟡';
+      const deadlineTimeStr = deadlineDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' });
+      const deadlineDateStr = deadlineDate.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Jakarta' });
+
+      const message = `⏳ *Peringatan Deadline!*\n\n${priorityEmoji} *${task.title}*\n📅 Deadline: ${deadlineDateStr} pukul ${deadlineTimeStr} WIB\n⏰ Sisa waktu: *${timeRemaining}*\n\n_Segera selesaikan tugas ini sebelum melewati batas waktu!_ 💪`;
+
+      try {
+        await this.whatsappApiService.sendMessage(task.user.waNumber, message);
+
+        // Log outgoing message to conversation
+        let conversation = await this.prisma.conversation.findUnique({
+          where: {
+            userId_waRoomId: {
+              userId: task.userId,
+              waRoomId: task.user.waNumber,
+            },
+          },
+        });
+        if (!conversation) {
+          conversation = await this.prisma.conversation.create({
+            data: {
+              userId: task.userId,
+              waRoomId: task.user.waNumber,
+            },
+          });
+        }
+
+        await this.prisma.message.create({
+          data: {
+            conversationId: conversation.id,
+            senderType: 'assistant',
+            text: message,
+          },
+        });
+
+        this.logger.log(`Deadline alert sent to ${task.user.waNumber} for task "${task.title}" (${timeRemaining})`);
+      } catch (err) {
+        this.logger.error(`Failed to send deadline alert for task "${task.title}": ${err.message}`);
+      }
+
+      // Delay 1 second between sends
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
   }
 }

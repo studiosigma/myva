@@ -2,6 +2,7 @@ import { Injectable, Logger, forwardRef, Inject } from '@nestjs/common';
 import { MemoryService } from '../memory/memory.service';
 import { ReminderService } from '../reminder/reminder.service';
 import { TaskService } from '../task/task.service';
+import { TaskPriority } from '../task/dto/create-task.dto';
 import { ContactService } from '../contact/contact.service';
 import { AIService, IntentClassification } from '../ai/ai.service';
 import { MemoryCategory } from '../memory/dto/create-memory.dto';
@@ -274,8 +275,27 @@ export class IntentRouterService {
           return `⚠️ *Fitur Task Management Terbatas* ⚠️\n\nFitur manajemen tugas/To-Do list via WhatsApp hanya tersedia pada paket *Basic* atau *Pro*. Silakan upgrade paket Anda di dasbor MyVA! 📋`;
         }
         const title = extracted?.title || text.replace(/^(todo|task|buat todo)\s+/i, '').trim();
-        const task = await this.taskService.create(userId, { title });
-        return `📋 Task berhasil ditambahkan ke To-Do List!\n\n*Task:* ${task.title}\n*Status:* To-Do`;
+        const priority = (extracted?.priority || 'medium') as TaskPriority;
+        const deadlineStr = extracted?.deadline || null;
+
+        const task = await this.taskService.create(userId, {
+          title,
+          priority,
+          deadline: deadlineStr || undefined,
+        });
+
+        const priorityEmoji = priority === 'high' ? '🔴' : priority === 'low' ? '🟢' : '🟡';
+        const priorityLabel = priority === 'high' ? 'Tinggi' : priority === 'low' ? 'Rendah' : 'Sedang';
+
+        let deadlineInfo = '';
+        if (task.deadline) {
+          const dl = new Date(task.deadline);
+          const dateStr = dl.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Jakarta' });
+          const timeStr = dl.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' });
+          deadlineInfo = `\n*Deadline:* ${dateStr} pukul ${timeStr} WIB`;
+        }
+
+        return `📋 *Task Berhasil Ditambahkan!*\n\n*Task:* ${task.title}\n*Status:* To-Do\n*Prioritas:* ${priorityEmoji} ${priorityLabel}${deadlineInfo}\n\n_Tugas Anda telah ditambahkan ke To-Do List._`;
       }
 
       // 3.5. INTENT: SMART EXPENSE TRACKER

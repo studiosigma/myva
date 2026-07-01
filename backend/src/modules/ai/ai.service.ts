@@ -9,6 +9,8 @@ export interface IntentClassification {
   extracted?: {
     title?: string;
     scheduledAt?: string;
+    deadline?: string;
+    priority?: string;
     amount?: number;
     description?: string;
     category?: string;
@@ -806,6 +808,8 @@ Instructions:
 2. Extract parameters if applicable in the "extracted" object:
 - "title": Clean title for tasks/reminders/calendar events (strip time-relative words like "besok", "nanti", "jam 5").
 - "scheduledAt": Calculate the exact ISO-8601 date-time string (YYYY-MM-DDTHH:mm:ss) based on the reference time for reminders/events. Do NOT include offset/timezone (e.g. "2026-06-30T17:00:00"). If relative time is given, calculate it.
+- "deadline": For CREATE_TASK only. If the user mentions a deadline or due date (e.g. "besok jam 10", "sebelum hari jumat", "deadline lusa siang"), calculate the exact ISO-8601 date-time string (YYYY-MM-DDTHH:mm:ss) without timezone. Return null if no deadline is mentioned.
+- "priority": For CREATE_TASK only. Detect urgency from context: "high" if the user says urgent/penting/segera/darurat/ASAP/harus selesai, "low" if the user says kalau sempat/santai/tidak buru-buru/nanti aja, otherwise default to "medium".
 - "amount": Extract numeric value of money for TRACK_EXPENSE (e.g. "25rb" -> 25000, "1.5 juta" -> 1500000). If the user specifies arithmetic, quantities, or discounts (e.g. "beli kopi 15rb kali 3", "bayar 150 ribu plus ppn 10%", "beli baju 100rb diskon 15rb"), calculate the final total amount and return it as a single integer (e.g. 45000, 165000, or 85000).
 - "description": Description of expense (e.g. "beli kopi", "bayar listrik").
 - "category": Category of expense (e.g. "Food", "Bills", "Transportation", "Other") or category of memory (default to "Notes").
@@ -826,6 +830,8 @@ Return response strictly in this JSON format:
   "extracted": {
     "title": "...",
     "scheduledAt": "...",
+    "deadline": "...",
+    "priority": "medium",
     "amount": 0,
     "description": "...",
     "category": "...",
