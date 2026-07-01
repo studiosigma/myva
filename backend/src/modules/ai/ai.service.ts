@@ -4,7 +4,7 @@ import OpenAI from 'openai';
 import { PrismaService } from '../../database/prisma.service';
 
 export interface IntentClassification {
-  intent: 'HELP' | 'CREATE_TASK' | 'CREATE_REMINDER' | 'CREATE_CALENDAR_EVENT' | 'TRACK_EXPENSE' | 'CREATE_MEMORY' | 'SEARCH_MEMORIES' | 'CREATE_CONTACT' | 'READ_EMAIL' | 'SUMMARIZE_FILE' | 'WEB_SEARCH' | 'CHAT';
+  intent: 'HELP' | 'CREATE_TASK' | 'CREATE_REMINDER' | 'CREATE_CALENDAR_EVENT' | 'TRACK_EXPENSE' | 'CREATE_MEMORY' | 'SEARCH_MEMORIES' | 'CREATE_CONTACT' | 'READ_EMAIL' | 'SUMMARIZE_FILE' | 'WEB_SEARCH' | 'SET_BUDGET' | 'CHAT';
   confidence: number;
   extracted?: {
     title?: string;
@@ -802,6 +802,7 @@ Instructions:
 - "CREATE_CONTACT": The user wants to save a contact (e.g. "kontak John Doe +628991234567", "simpan kontak Budi 081234567").
 - "READ_EMAIL": The user wants to read, check, or search emails (e.g. "cek email terbaru", "cari email dari Sarah", "baca inbox gmail").
 - "SUMMARIZE_FILE": The user is asking to summarize a document (e.g. "ringkas file ini", "rangkum dokumen di atas").
+- "SET_BUDGET": The user wants to set, change, or update their monthly spending budget/limit (e.g. "set budget 2 juta", "atur anggaran bulanan 3.5jt", "batas pengeluaran saya 1.5 juta per bulan", "ubah budget jadi 5 juta").
 - "WEB_SEARCH": The user wants to search the internet/web for real-time information, current events, news, weather, stock/gold prices, match results, or factual questions that require up-to-date internet search (e.g. "siapa presiden Indonesia saat ini?", "cuaca Jakarta hari ini", "berita terupdate", "cari di internet harga emas hari ini", "browsing pemenang piala dunia").
 - "CHAT": Any general conversational message, greeting, or subjective/personal opinion question that doesn't fit the above specific database-mutating intents or require real-time web facts (e.g. "halo", "apa kabar?", "bagaimana menurutmu?", "ceritakan lelucon").
 
@@ -810,7 +811,7 @@ Instructions:
 - "scheduledAt": Calculate the exact ISO-8601 date-time string (YYYY-MM-DDTHH:mm:ss) based on the reference time for reminders/events. Do NOT include offset/timezone (e.g. "2026-06-30T17:00:00"). If relative time is given, calculate it.
 - "deadline": For CREATE_TASK only. If the user mentions a deadline or due date (e.g. "besok jam 10", "sebelum hari jumat", "deadline lusa siang"), calculate the exact ISO-8601 date-time string (YYYY-MM-DDTHH:mm:ss) without timezone. Return null if no deadline is mentioned.
 - "priority": For CREATE_TASK only. Detect urgency from context: "high" if the user says urgent/penting/segera/darurat/ASAP/harus selesai, "low" if the user says kalau sempat/santai/tidak buru-buru/nanti aja, otherwise default to "medium".
-- "amount": Extract numeric value of money for TRACK_EXPENSE (e.g. "25rb" -> 25000, "1.5 juta" -> 1500000). If the user specifies arithmetic, quantities, or discounts (e.g. "beli kopi 15rb kali 3", "bayar 150 ribu plus ppn 10%", "beli baju 100rb diskon 15rb"), calculate the final total amount and return it as a single integer (e.g. 45000, 165000, or 85000).
+- "amount": Extract numeric value of money for TRACK_EXPENSE or SET_BUDGET (e.g. "25rb" -> 25000, "1.5 juta" -> 1500000, "2jt" -> 2000000). If the user specifies arithmetic, quantities, or discounts (e.g. "beli kopi 15rb kali 3", "bayar 150 ribu plus ppn 10%", "beli baju 100rb diskon 15rb"), calculate the final total amount and return it as a single integer (e.g. 45000, 165000, or 85000).
 - "description": Description of expense (e.g. "beli kopi", "bayar listrik").
 - "category": Category of expense (e.g. "Food", "Bills", "Transportation", "Other") or category of memory (default to "Notes").
 - "name": Contact name.

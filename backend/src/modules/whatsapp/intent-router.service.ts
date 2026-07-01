@@ -15,7 +15,7 @@ import { google } from 'googleapis';
 export class IntentRouterService {
   private readonly logger = new Logger(IntentRouterService.name);
   private pendingActions = new Map<string, {
-    intent: 'CREATE_REMINDER' | 'CREATE_CALENDAR_EVENT' | 'CREATE_TASK' | 'TRACK_EXPENSE' | 'RESCHEDULE_EVENT';
+    intent: 'CREATE_REMINDER' | 'CREATE_CALENDAR_EVENT' | 'CREATE_TASK' | 'TRACK_EXPENSE' | 'RESCHEDULE_EVENT' | 'SET_BUDGET';
     extracted: any;
     timestamp: number;
   }>();
@@ -397,7 +397,62 @@ export class IntentRouterService {
           maximumFractionDigits: 0
         }).format(categoryTotal);
 
-        return `💸 *Pengeluaran Berhasil Dicatat!*\n\n*Deskripsi:* ${expense.description}\n*Jumlah:* ${formattedAmount}\n*Kategori:* ${expense.category}\n\n📈 *Rekap Bulan Ini*:\n• Total Kategori *${expense.category}*: ${formattedCategoryTotal}\n• Total Semua Pengeluaran: ${formattedMonthlyTotal}\n\n_Catatan keuangan Anda telah diperbarui di dashboard._`;
+        let budgetAlert = '';
+        const budgetStatus = await this.expenseService.checkBudgetStatus(userId);
+        if (budgetStatus.hasBudget) {
+          const formattedBudget = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(budgetStatus.monthlyBudget);
+          const formattedRemaining = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Math.abs(budgetStatus.remaining));
+
+          if (budgetStatus.status === 'exceeded') {
+            budgetAlert = `\n\n🔴 *PERINGATAN: Anggaran Bulanan Terlampaui!*\nAnggaran: ${formattedBudget} | Terpakai: ${budgetStatus.percentage}%\nAnda telah melebihi anggaran sebesar *${formattedRemaining}*. Pertimbangkan untuk mengurangi pengeluaran di sisa bulan ini.`;
+          } else if (budgetStatus.status === 'warning') {
+            budgetAlert = `\n\n🟡 *Perhatian: Anggaran Hampir Habis!*\nAnggaran: ${formattedBudget} | Terpakai: ${budgetStatus.percentage}%\nSisa anggaran Anda tinggal *${formattedRemaining}*. Bijak mengatur pengeluaran ya!`;
+          }
+        }
+
+        return `💸 *Pengeluaran Berhasil Dicatat!*\n\n*Deskripsi:* ${expense.description}\n*Jumlah:* ${formattedAmount}\n*Kategori:* ${expense.category}\n\n📈 *Rekap Bulan Ini*:\n• Total Kategori *${expense.category}*: ${formattedCategoryTotal}\n• Total Semua Pengeluaran: ${formattedMonthlyTotal}\n\n_Catatan keuangan Anda telah diperbarui di dashboard._${budgetAlert}`;
+      }
+
+      // 3.6. INTENT: SET BUDGET
+      if (intent === 'SET_BUDGET') {
+        if (plan === 'free') {
+          return `⚠️ *Fitur Anggaran Terbatas* ⚠️\n\nFitur pengaturan anggaran bulanan hanya tersedia pada paket *Basic* atau *Pro*. Silakan upgrade paket Anda di dasbor MyVA! 💰`;
+        }
+        const amount = extracted?.amount || 0;
+
+        if (amount <= 0) {
+          this.pendingActions.set(userId, {
+            intent: 'SET_BUDGET',
+            extracted: {},
+            timestamp: Date.now(),
+          });
+          const question = await this.aiService.generateClarificationQuestion(
+            'SET_BUDGET',
+            text,
+            'nominal anggaran bulanan (amount)',
+          );
+          return question;
+        }
+
+        await this.prisma.user.update({
+          where: { id: userId },
+          data: { monthlyBudget: amount },
+        });
+
+        const formattedBudget = new Intl.NumberFormat('id-ID', {
+          style: 'currency',
+          currency: 'IDR',
+          maximumFractionDigits: 0,
+        }).format(amount);
+
+        const budgetStatus = await this.expenseService.checkBudgetStatus(userId);
+        const formattedCurrentSpend = new Intl.NumberFormat('id-ID', {
+          style: 'currency',
+          currency: 'IDR',
+          maximumFractionDigits: 0,
+        }).format(budgetStatus.monthlyTotal);
+
+        return `💰 *Anggaran Bulanan Berhasil Diatur!*\n\n*Batas Anggaran:* ${formattedBudget}/bulan\n*Pengeluaran Bulan Ini:* ${formattedCurrentSpend} (${budgetStatus.percentage}%)\n\n_Asisten akan memperingatkan Anda secara otomatis saat pengeluaran mencapai 75% atau melebihi batas anggaran._`;
       }
 
       // 4. INTENT: CREATE MEMORY (NOTE)
@@ -1125,7 +1180,48 @@ Instruksi: Gunakan data keuangan di atas untuk menjawab pertanyaan pengguna deng
         maximumFractionDigits: 0
       }).format(expense.amount);
 
-      return `💸 *Pengeluaran Berhasil Dicatat!*\n\n*Deskripsi:* ${expense.description}\n*Jumlah:* ${formattedAmount}\n*Kategori:* ${expense.category}\n\n_Catatan keuangan Anda telah diperbarui._`;
+      let budgetAlert = '';
+      const budgetStatus = await this.expenseService.checkBudgetStatus(userId);
+      if (budgetStatus.hasBudget) {
+        const formattedBudget = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(budgetStatus.monthlyBudget);
+        const formattedRemaining = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Math.abs(budgetStatus.remaining));
+
+        if (budgetStatus.status === 'exceeded') {
+          budgetAlert = `\n\n🔴 *PERINGATAN: Anggaran Bulanan Terlampaui!*\nAnggaran: ${formattedBudget} | Terpakai: ${budgetStatus.percentage}%\nAnda telah melebihi anggaran sebesar *${formattedRemaining}*. Pertimbangkan untuk mengurangi pengeluaran di sisa bulan ini.`;
+        } else if (budgetStatus.status === 'warning') {
+          budgetAlert = `\n\n🟡 *Perhatian: Anggaran Hampir Habis!*\nAnggaran: ${formattedBudget} | Terpakai: ${budgetStatus.percentage}%\nSisa anggaran Anda tinggal *${formattedRemaining}*. Bijak mengatur pengeluaran ya!`;
+        }
+      }
+
+      return `💸 *Pengeluaran Berhasil Dicatat!*\n\n*Deskripsi:* ${expense.description}\n*Jumlah:* ${formattedAmount}\n*Kategori:* ${expense.category}\n\n_Catatan keuangan Anda telah diperbarui._${budgetAlert}`;
+    }
+
+    if (pending.intent === 'SET_BUDGET') {
+      const clarified = await this.aiService.extractClarifiedParameter('SET_BUDGET', {}, text);
+      const amount = clarified?.amount;
+      if (!amount || isNaN(amount) || amount <= 0) {
+        return `Format nominal anggaran tidak dipahami. Batal mengatur anggaran. Silakan coba lagi (contoh: "2 juta", "1.5jt").`;
+      }
+
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { monthlyBudget: amount },
+      });
+
+      const formattedBudget = new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        maximumFractionDigits: 0,
+      }).format(amount);
+
+      const budgetStatus = await this.expenseService.checkBudgetStatus(userId);
+      const formattedCurrentSpend = new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        maximumFractionDigits: 0,
+      }).format(budgetStatus.monthlyTotal);
+
+      return `💰 *Anggaran Bulanan Berhasil Diatur!*\n\n*Batas Anggaran:* ${formattedBudget}/bulan\n*Pengeluaran Bulan Ini:* ${formattedCurrentSpend} (${budgetStatus.percentage}%)\n\n_Asisten akan memperingatkan Anda secara otomatis saat pengeluaran mencapai 75% atau melebihi batas anggaran._`;
     }
 
     return `Maaf, instruksi sebelumnya tidak bisa dilanjutkan.`;

@@ -33,6 +33,7 @@ model User {
   waVerificationExpires DateTime? @map("wa_verification_expires")
   googleAccessToken     String?  @map("google_access_token")
   googleRefreshToken    String?  @map("google_refresh_token")
+  monthlyBudget         Float?   @map("monthly_budget")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 

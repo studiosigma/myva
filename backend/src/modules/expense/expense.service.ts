@@ -97,4 +97,45 @@ export class ExpenseService {
 
     return aggregate._sum.amount || 0;
   }
+
+  async checkBudgetStatus(userId: string): Promise<{
+    hasBudget: boolean;
+    monthlyBudget: number;
+    monthlyTotal: number;
+    percentage: number;
+    status: 'safe' | 'warning' | 'exceeded';
+    remaining: number;
+  }> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user?.monthlyBudget) {
+      return {
+        hasBudget: false,
+        monthlyBudget: 0,
+        monthlyTotal: 0,
+        percentage: 0,
+        status: 'safe',
+        remaining: 0,
+      };
+    }
+
+    const monthlyTotal = await this.getMonthlyTotal(userId);
+    const percentage = Math.round((monthlyTotal / user.monthlyBudget) * 100);
+    const remaining = user.monthlyBudget - monthlyTotal;
+
+    let status: 'safe' | 'warning' | 'exceeded' = 'safe';
+    if (percentage >= 100) {
+      status = 'exceeded';
+    } else if (percentage >= 75) {
+      status = 'warning';
+    }
+
+    return {
+      hasBudget: true,
+      monthlyBudget: user.monthlyBudget,
+      monthlyTotal,
+      percentage,
+      status,
+      remaining,
+    };
+  }
 }
