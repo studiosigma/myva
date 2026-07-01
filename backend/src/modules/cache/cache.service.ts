@@ -23,6 +23,12 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       password,
       ...(enableTls ? { tls: {} } : {}),
       maxRetriesPerRequest: null,
+      retryStrategy: (times) => {
+        // Exponential backoff with a maximum delay of 30 seconds
+        const delay = Math.min(times * 1500, 30000);
+        this.logger.warn(`Redis connection failed/lost. Retry attempt #${times} in ${delay}ms...`);
+        return delay;
+      },
     });
 
     this.client.on('connect', () => {
@@ -30,7 +36,12 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     });
 
     this.client.on('error', (err) => {
-      this.logger.error(`Redis Cache Client Error: ${err.message}`, err.stack);
+      // Suppress verbose printing of max clients reached if it's already logged, or log as warning
+      if (err.message.includes('max number of clients reached')) {
+        this.logger.warn(`Redis Cache Client: Server is at maximum client capacity (${err.message})`);
+      } else {
+        this.logger.error(`Redis Cache Client Error: ${err.message}`, err.stack);
+      }
     });
   }
 
