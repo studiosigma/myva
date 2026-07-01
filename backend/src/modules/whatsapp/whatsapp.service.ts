@@ -8,41 +8,28 @@ import { IntentRouterService } from './intent-router.service';
 import { normalizePhoneNumber } from '../../common/utils/phone-utils';
 import { S3Service } from '../../integrations/s3.service';
 import { AIService } from '../ai/ai.service';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class WhatsAppService {
   private readonly logger = new Logger(WhatsAppService.name);
-  private rateLimitMap = new Map<string, number[]>();
 
-  private checkRateLimit(from: string): boolean {
-    const now = Date.now();
-    const oneMinuteAgo = now - 60000;
-    
-    let timestamps = this.rateLimitMap.get(from) || [];
-    // Clean up old timestamps
-    timestamps = timestamps.filter(t => t > oneMinuteAgo);
-    
-    if (timestamps.length >= 10) {
-      this.rateLimitMap.set(from, timestamps); // Update the cleaned up timestamps back
-      return false; // Rate limit exceeded
-    }
-    
-    timestamps.push(now);
-    this.rateLimitMap.set(from, timestamps);
-    
-    // Occasional cleanup of the map to prevent memory leaks
-    if (this.rateLimitMap.size > 1000) {
-      for (const [key, times] of this.rateLimitMap.entries()) {
-        const validTimes = times.filter(t => t > oneMinuteAgo);
-        if (validTimes.length === 0) {
-          this.rateLimitMap.delete(key);
-        } else {
-          this.rateLimitMap.set(key, validTimes);
-        }
+  private async checkRateLimit(from: string): Promise<{ allowed: boolean; count: number }> {
+    const currentMinuteBucket = Math.floor(Date.now() / 60000);
+    const key = `rate_limit:${from}:${currentMinuteBucket}`;
+    try {
+      const count = await this.cacheService.incr(key);
+      if (count === 1) {
+        await this.cacheService.set(key, '1', 60);
       }
+      return {
+        allowed: count <= 10,
+        count,
+      };
+    } catch (err) {
+      this.logger.error(`Error checking rate limit in Redis: ${err.message}`);
+      return { allowed: true, count: 1 };
     }
-    
-    return true; // Allowed
   }
 
   constructor(
@@ -52,6 +39,7 @@ export class WhatsAppService {
     private readonly intentRouterService: IntentRouterService,
     private readonly s3Service: S3Service,
     private readonly aiService: AIService,
+    private readonly cacheService: CacheService,
     @InjectQueue('file_processing_queue') private readonly fileProcessingQueue: Queue,
     @InjectQueue('reminder_queue') private readonly reminderQueue: Queue,
   ) {}
@@ -70,11 +58,10 @@ export class WhatsAppService {
       }
     }
 
-    if (!this.checkRateLimit(from)) {
+    const rateLimit = await this.checkRateLimit(from);
+    if (!rateLimit.allowed) {
       this.logger.warn(`Rate limit exceeded for ${from}`);
-      const timestamps = this.rateLimitMap.get(from);
-      // Only send warning on the exact 10th/11th message to avoid spamming the warning itself
-      if (timestamps && timestamps.length === 10) {
+      if (rateLimit.count === 11) {
          await this.whatsappApiService.sendMessage(from, `⚠️ *Sistem Pengamanan*\n\nAnda mengirim pesan terlalu cepat (Batas 10 pesan/menit). Mohon jeda sejenak untuk menghindari pemblokiran akun otomatis.`);
       }
       return;
@@ -276,10 +263,10 @@ export class WhatsAppService {
       }
     }
 
-    if (!this.checkRateLimit(from)) {
+    const rateLimit = await this.checkRateLimit(from);
+    if (!rateLimit.allowed) {
       this.logger.warn(`Rate limit exceeded for audio from ${from}`);
-      const timestamps = this.rateLimitMap.get(from);
-      if (timestamps && timestamps.length === 10) {
+      if (rateLimit.count === 11) {
          await this.whatsappApiService.sendMessage(from, `⚠️ *Sistem Pengamanan*\n\nAnda mengirim pesan terlalu cepat (Batas 10 pesan/menit). Mohon jeda sejenak untuk menghindari pemblokiran akun otomatis.`);
       }
       return;
@@ -524,8 +511,12 @@ export class WhatsAppService {
       }
     }
 
-    if (!this.checkRateLimit(from)) {
+    const rateLimit = await this.checkRateLimit(from);
+    if (!rateLimit.allowed) {
       this.logger.warn(`Rate limit exceeded for document from ${from}`);
+      if (rateLimit.count === 11) {
+         await this.whatsappApiService.sendMessage(from, `⚠️ *Sistem Pengamanan*\n\nAnda mengirim pesan terlalu cepat (Batas 10 pesan/menit). Mohon jeda sejenak untuk menghindari pemblokiran akun otomatis.`);
+      }
       return;
     }
 
@@ -602,8 +593,12 @@ export class WhatsAppService {
       }
     }
 
-    if (!this.checkRateLimit(from)) {
+    const imgRateLimit = await this.checkRateLimit(from);
+    if (!imgRateLimit.allowed) {
       this.logger.warn(`Rate limit exceeded for image from ${from}`);
+      if (imgRateLimit.count === 11) {
+         await this.whatsappApiService.sendMessage(from, `⚠️ *Sistem Pengamanan*\n\nAnda mengirim pesan terlalu cepat (Batas 10 pesan/menit). Mohon jeda sejenak untuk menghindari pemblokiran akun otomatis.`);
+      }
       return;
     }
 
