@@ -11,16 +11,13 @@ import { ContactModule } from '../contact/contact.module';
 import { AIModule } from '../ai/ai.module';
 import { IntegrationsModule } from '../../integrations/integrations.module';
 import { ConfigModule } from '@nestjs/config';
-import { BullModule } from '@nestjs/bullmq';
+import { QueuesModule } from '../../queues/queues.module';
 import { ExpenseModule } from '../expense/expense.module';
 
 @Module({
   imports: [
     ConfigModule,
-    BullModule.registerQueue(
-      { name: 'file_processing_queue' },
-      { name: 'reminder_queue' },
-    ),
+    QueuesModule,
     UsersModule,
     MemoryModule,
     ReminderModule,

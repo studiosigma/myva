@@ -3,18 +3,13 @@ import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 import { ConfigModule } from '@nestjs/config';
 import { IntegrationsModule } from '../../integrations/integrations.module';
-import { BullModule } from '@nestjs/bullmq';
+import { QueuesModule } from '../../queues/queues.module';
 
 @Module({
   imports: [
     ConfigModule,
     IntegrationsModule,
-    BullModule.registerQueue(
-      { name: 'reminder_queue' },
-      { name: 'email_queue' },
-      { name: 'file_processing_queue' },
-      { name: 'ai_queue' },
-    ),
+    QueuesModule,
   ],
   controllers: [AdminController],
   providers: [AdminService],

@@ -1,13 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ReminderService } from './reminder.service';
 import { ReminderController } from './reminder.controller';
-import { BullModule } from '@nestjs/bullmq';
+import { QueuesModule } from '../../queues/queues.module';
 
 @Module({
   imports: [
-    BullModule.registerQueue({
-      name: 'reminder_queue',
-    }),
+    QueuesModule,
   ],
   controllers: [ReminderController],
   providers: [ReminderService],
