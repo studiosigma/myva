@@ -91,6 +91,22 @@ Format dengan bahasa Indonesia yang alami, berikan motivasi singkat untuk memula
       user.assistantName || 'MyVA',
       'daily_briefing'
     );
+
+    if (briefingText.includes('Mohon Maaf') || briefingText.includes('sedang sangat sibuk')) {
+      // Fallback briefing when Gemini API fails/is rate limited
+      return `Selamat pagi *${user.name || 'User'}*! 🌅
+
+Mohon maaf, saat ini asisten AI kami sedang dalam batasan kuota untuk menyusun kata-kata pembuka personal. Namun, agenda dan tugas Anda hari ini tetap aman! Berikut rinciannya:
+
+📅 *PENGINGAT HARI INI:*
+${reminderList}
+
+📋 *TUGAS AKTIF:*
+${taskList}
+
+Semoga hari Anda produktif dan menyenangkan! ✨`;
+    }
+
     return briefingText;
   }
 
@@ -156,6 +172,8 @@ Format dengan bahasa Indonesia yang alami, berikan motivasi singkat untuk memula
 
     for (const user of usersToBrief) {
       await this.sendDailyBriefing(user.id);
+      // Delay 2 seconds between users to prevent hitting the Gemini API RPM limit
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
   }
 
@@ -170,7 +188,12 @@ Nama tugas penting: "${taskTitle}"
 
 Format pesan menggunakan bahasa Indonesia yang ramah, langsung pada sasaran, dan gunakan bold dengan bintang *text* khas WhatsApp.`;
 
-    return this.aiService.chat([{ role: 'user', content: prompt }], user.persona);
+    const response = await this.aiService.chat([{ role: 'user', content: prompt }], user.persona);
+    if (response.includes('Mohon Maaf') || response.includes('sedang sangat sibuk')) {
+      // Fallback follow-up message when Gemini API fails/is rate limited
+      return `Halo *${user.name || 'User'}*, sekadar mengingatkan untuk tugas penting Anda: *"${taskTitle}"*. Semangat menyelesaikannya! 💪`;
+    }
+    return response;
   }
 
   async checkAndSendFollowUps(): Promise<void> {
@@ -234,6 +257,8 @@ Format pesan menggunakan bahasa Indonesia yang ramah, langsung pada sasaran, dan
         } catch (err) {
           this.logger.error(`Failed to send follow up: ${err.message}`);
         }
+        // Delay 2 seconds between users to prevent hitting the Gemini API RPM limit
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
     }
   }
