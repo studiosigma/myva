@@ -80,6 +80,16 @@ export class FileProcessingProcessor extends WorkerHost {
     // Process summary with AI
     const result = await this.aiService.summarize(textContent);
 
+    // Save summary on the file record in DB
+    await this.prisma.file.update({
+      where: { id: fileId },
+      data: {
+        summary: result.summary,
+        keyPoints: result.keyPoints,
+        actionItems: result.actions,
+      },
+    });
+
     // Save summary directly as a new memory note (associated with this file)
     await this.prisma.memory.create({
       data: {

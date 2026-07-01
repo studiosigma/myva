@@ -165,6 +165,9 @@ model File {
   size        Int // size in bytes
   storagePath String   @map("storage_path") // S3 path
   gdrivePath  String?  @map("gdrive_path")  // Google Drive path reference
+  summary     String?
+  keyPoints   String[] @map("key_points")
+  actionItems String[] @map("action_items")
   createdAt   DateTime @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
