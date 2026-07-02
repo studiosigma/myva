@@ -4,7 +4,7 @@ import OpenAI from 'openai';
 import { PrismaService } from '../../database/prisma.service';
 
 export interface IntentClassification {
-  intent: 'HELP' | 'CREATE_TASK' | 'CREATE_REMINDER' | 'CREATE_CALENDAR_EVENT' | 'TRACK_EXPENSE' | 'CREATE_MEMORY' | 'SEARCH_MEMORIES' | 'CREATE_CONTACT' | 'READ_EMAIL' | 'SUMMARIZE_FILE' | 'WEB_SEARCH' | 'SET_BUDGET' | 'CHAT';
+  intent: 'HELP' | 'CREATE_TASK' | 'CREATE_REMINDER' | 'CREATE_CALENDAR_EVENT' | 'TRACK_EXPENSE' | 'EXPORT_EXPENSES' | 'CREATE_MEMORY' | 'SEARCH_MEMORIES' | 'CREATE_CONTACT' | 'READ_EMAIL' | 'SUMMARIZE_FILE' | 'WEB_SEARCH' | 'SET_BUDGET' | 'CHAT';
   confidence: number;
   extracted?: {
     title?: string;
@@ -678,13 +678,20 @@ Do NOT include timezone offset in scheduledAt string. Keep it in local Asia/Jaka
   async analyzeImage(
     imageBuffer: Buffer,
     mimeType: string,
-  ): Promise<{ description: string; extractedText?: string }> {
+  ): Promise<{
+    description: string;
+    extractedText?: string;
+    isReceipt?: boolean;
+    expenseDetails?: { amount: number; description: string; category: string } | null;
+  }> {
     const geminiKey = this.geminiApiKey;
     if (!geminiKey) {
       this.logger.warn('GEMINI_API_KEY is not configured. Bypassing image analysis.');
       return {
         description: 'Analisis gambar dinonaktifkan karena GEMINI_API_KEY tidak dikonfigurasi.',
         extractedText: '',
+        isReceipt: false,
+        expenseDetails: null,
       };
     }
 
@@ -703,7 +710,7 @@ Do NOT include timezone offset in scheduledAt string. Keep it in local Asia/Jaka
                 },
               },
               {
-                text: 'Lakukan analisis pada gambar ini. Ekstrak semua teks yang terlihat di dalam gambar secara verbatim ke kolom "extractedText", dan berikan deskripsi/ringkasan mengenai gambar ini (misal apa isi gambar, jika ini berupa kwitansi/catatan jelaskan isinya) ke kolom "description". Format respon harus berupa JSON dengan struktur persis seperti ini: {\n  "description": "deskripsi gambar di sini",\n  "extractedText": "semua teks yang diekstrak di sini"\n}',
+                text: 'Lakukan analisis pada gambar ini. Ekstrak semua teks yang terlihat di dalam gambar secara verbatim ke kolom "extractedText", dan berikan deskripsi/ringkasan mengenai gambar ini (misal apa isi gambar, jika ini berupa kwitansi/catatan jelaskan isinya) ke kolom "description". Jika gambar ini berupa struk belanja, bukti transfer, kuitansi, atau faktur pembayaran, atur "isReceipt" menjadi true dan berikan rincian pengeluaran ke dalam objek "expenseDetails" dengan field: "amount" (nominal total angka saja), "description" (nama merchant/toko atau ringkasan pembelian), dan "category" (kategori yang cocok dari: "Food", "Bills", "Transportation", "Entertainment", "Shopping", "Other"). Jika bukan struk, atur "isReceipt" menjadi false dan "expenseDetails" menjadi null. Format respon harus berupa JSON dengan struktur persis seperti ini:\n{\n  "description": "deskripsi gambar di sini",\n  "extractedText": "teks yang diekstrak di sini",\n  "isReceipt": true/false,\n  "expenseDetails": {\n    "amount": 150000,\n    "description": "Indomaret",\n    "category": "Shopping"\n  }\n}'
               },
             ],
           },
@@ -736,12 +743,16 @@ Do NOT include timezone offset in scheduledAt string. Keep it in local Asia/Jaka
       return {
         description: parsed.description || 'Tidak ada deskripsi gambar.',
         extractedText: parsed.extractedText || '',
+        isReceipt: !!parsed.isReceipt,
+        expenseDetails: parsed.expenseDetails || null,
       };
     } catch (error) {
       this.logger.error(`Gemini Image Processing Error: ${error.message}`);
       return {
         description: `Gagal memproses gambar: ${error.message}`,
         extractedText: '',
+        isReceipt: false,
+        expenseDetails: null,
       };
     }
   }
@@ -798,6 +809,7 @@ Instructions:
 - "CREATE_REMINDER": The user wants to create a reminder (e.g. "ingetin jemput adik besok jam 5 sore", "reminder minum obat nanti malam jam 8", "ingatkan telpon Budi 2 jam lagi").
 - "CREATE_CALENDAR_EVENT": The user wants to schedule a meeting, event, or calendar entry (e.g. "jadwal meeting koordinasi besok jam 1 siang", "pertemuan dengan klien hari jumat jam 9 pagi", "buat janji makan siang nanti jam 12").
 - "TRACK_EXPENSE": The user wants to log an expense (e.g. "catat beli kopi 25rb", "pengeluaran bayar listrik 150ribu", "tadi jajan bakso 15.000").
+- "EXPORT_EXPENSES": The user wants to download, export, generate a file, or get a list/link of their financial expenses (e.g. "ekspor pengeluaran", "download data keuangan", "ekspor data belanja saya", "ekspor csv", "unduh rekap pengeluaran").
 - "CREATE_MEMORY": The user wants to save a note, fact, password, or information for long term memory (e.g. "catat nomor seri laptop kantor LPT-9988", "ingat bahwa warna favorit istri saya adalah biru", "tulis catatan password wifi adalah 12345").
 - "SEARCH_MEMORIES": The user wants to find, look up, or search stored notes (e.g. "cari nomor seri laptop", "search password wifi", "kemarin saya catat apa tentang resep nasi goreng?").
 - "CREATE_CONTACT": The user wants to save a contact (e.g. "kontak John Doe +628991234567", "simpan kontak Budi 081234567").

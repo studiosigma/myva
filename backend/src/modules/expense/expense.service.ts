@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { Expense } from '@prisma/client';
@@ -137,5 +137,18 @@ export class ExpenseService {
       status,
       remaining,
     };
+  }
+
+  async delete(userId: string, id: string): Promise<void> {
+    this.logger.log(`Deleting expense ID ${id} for user ${userId}`);
+    const expense = await this.prisma.expense.findFirst({
+      where: { id, userId },
+    });
+    if (!expense) {
+      throw new NotFoundException(`Expense with ID ${id} not found.`);
+    }
+    await this.prisma.expense.delete({
+      where: { id },
+    });
   }
 }

@@ -6403,4 +6403,9 @@ input:checked + .slider:before {
   transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
 }
 
+/* Finance transaction table hover */
+.transaction-row:hover {
+  background-color: rgba(15, 23, 42, 0.02) !important;
+}
+
 

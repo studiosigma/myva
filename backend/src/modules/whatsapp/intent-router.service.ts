@@ -10,12 +10,14 @@ import { ExpenseService } from '../expense/expense.service';
 import { PrismaService } from '../../database/prisma.service';
 import { GoogleApiService } from '../../integrations/google-api.service';
 import { google } from 'googleapis';
+import { ConfigService } from '@nestjs/config';
+import { S3Service } from '../../integrations/s3.service';
 
 @Injectable()
 export class IntentRouterService {
   private readonly logger = new Logger(IntentRouterService.name);
   private pendingActions = new Map<string, {
-    intent: 'CREATE_REMINDER' | 'CREATE_CALENDAR_EVENT' | 'CREATE_TASK' | 'TRACK_EXPENSE' | 'RESCHEDULE_EVENT' | 'SET_BUDGET';
+    intent: 'CREATE_REMINDER' | 'CREATE_CALENDAR_EVENT' | 'CREATE_TASK' | 'TRACK_EXPENSE' | 'RESCHEDULE_EVENT' | 'SET_BUDGET' | 'EXPORT_EXPENSES';
     extracted: any;
     timestamp: number;
   }>();
@@ -29,6 +31,8 @@ export class IntentRouterService {
     private readonly expenseService: ExpenseService,
     private readonly prisma: PrismaService,
     private readonly googleApiService: GoogleApiService,
+    private readonly configService: ConfigService,
+    private readonly s3Service: S3Service,
   ) {}
 
   async routeMessage(userId: string, text: string, persona?: string): Promise<string> {
@@ -423,6 +427,46 @@ export class IntentRouterService {
         }
 
         return `${summaryText}\n\n📈 *Rekap Bulan Ini*:\n• Total Kategori *${lastCategory}*: ${formattedCategoryTotal}\n• Total Semua Pengeluaran: ${formattedMonthlyTotal}\n\n_Catatan keuangan Anda telah diperbarui di dashboard._${budgetAlert}`;
+      }
+
+      // 3.55. INTENT: EXPORT EXPENSES
+      if (intent === 'EXPORT_EXPENSES') {
+        const expenses = await this.prisma.expense.findMany({
+          where: { userId },
+          orderBy: { createdAt: 'desc' },
+        });
+
+        if (expenses.length === 0) {
+          return `📊 *Ekspor Data Keuangan*\n\nAnda belum memiliki catatan pengeluaran apa pun untuk diekspor. Mulailah mencatat pengeluaran Anda dengan mengetik misalnya: *"catat beli kopi 15rb"*.`;
+        }
+
+        let csvContent = 'ID,Tanggal,Kategori,Deskripsi,Nominal\n';
+        for (const exp of expenses) {
+          const formattedDate = exp.createdAt.toISOString();
+          const cleanDesc = exp.description.replace(/"/g, '""');
+          csvContent += `"${exp.id}","${formattedDate}","${exp.category}","${cleanDesc}",${exp.amount}\n`;
+        }
+
+        const buffer = Buffer.from(csvContent, 'utf-8');
+        const filename = `pengeluaran_${Date.now()}.csv`;
+        const storageKey = `vault/${userId}/${filename}`;
+
+        await this.s3Service.upload(storageKey, buffer, 'text/csv');
+
+        const fileRecord = await this.prisma.file.create({
+          data: {
+            userId,
+            filename,
+            mimeType: 'text/csv',
+            size: buffer.length,
+            storagePath: storageKey,
+          },
+        });
+
+        const backendUrl = this.configService.get<string>('BACKEND_URL') || 'http://localhost:3000';
+        const downloadUrl = `${backendUrl}/public/file/download/${fileRecord.id}`;
+
+        return `📊 *Ekspor Data Keuangan Berhasil!*\n\nSaya telah merangkum seluruh catatan pengeluaran Anda ke dalam file CSV.\n\n📥 *Link Download File*:\n${downloadUrl}\n\n_File ini juga telah disimpan dengan aman di Files Vault Anda._`;
       }
 
       // 3.6. INTENT: SET BUDGET

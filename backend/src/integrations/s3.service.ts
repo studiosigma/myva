@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class S3Service {
@@ -27,6 +29,21 @@ export class S3Service {
   }
 
   async upload(key: string, buffer: Buffer, mimeType: string): Promise<string> {
+    const isMock = this.bucketName === 'myva-vault' && 
+      (this.configService.get<string>('S3_ENDPOINT')?.includes('your-custom-s3-endpoint.com') ||
+       this.configService.get<string>('S3_ACCESS_KEY_ID') === 'your-access-key-id');
+
+    if (isMock) {
+      this.logger.warn(`S3 is running in Mock mode. Saving file locally to key: ${key}`);
+      const localPath = path.join(process.cwd(), 'uploads', key);
+      const dir = path.dirname(localPath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      fs.writeFileSync(localPath, buffer);
+      return key;
+    }
+
     try {
       await this.client.send(
         new PutObjectCommand({
@@ -40,11 +57,30 @@ export class S3Service {
       return key; // return key as storage path reference
     } catch (error) {
       this.logger.error(`S3 upload error for key ${key}: ${error.message}`);
+      
+      // Fallback to local storage in case of connection failure in local development
+      if (process.env.NODE_ENV !== 'production') {
+        this.logger.warn(`S3 upload failed. Falling back to local storage for local development.`);
+        const localPath = path.join(process.cwd(), 'uploads', key);
+        const dir = path.dirname(localPath);
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
+        }
+        fs.writeFileSync(localPath, buffer);
+        return key;
+      }
       throw error;
     }
   }
 
   async delete(key: string): Promise<void> {
+    const localPath = path.join(process.cwd(), 'uploads', key);
+    if (fs.existsSync(localPath)) {
+      fs.unlinkSync(localPath);
+      this.logger.log(`Deleted file from local mock storage: ${key}`);
+      return;
+    }
+
     try {
       await this.client.send(
         new DeleteObjectCommand({
@@ -60,6 +96,12 @@ export class S3Service {
   }
 
   async getObjectStream(key: string) {
+    const localPath = path.join(process.cwd(), 'uploads', key);
+    if (fs.existsSync(localPath)) {
+      this.logger.log(`Reading file from local mock storage: ${key}`);
+      return fs.createReadStream(localPath);
+    }
+
     try {
       const response = await this.client.send(
         new GetObjectCommand({

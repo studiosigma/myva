@@ -80,4 +80,20 @@ export class FileService {
 
     return { success: true };
   }
+
+  async findOnePublic(id: string): Promise<File> {
+    const fileRecord = await this.prisma.file.findUnique({
+      where: { id },
+    });
+
+    if (!fileRecord) {
+      throw new NotFoundException(`File record with ID ${id} not found.`);
+    }
+
+    return fileRecord;
+  }
+
+  async getObjectStream(key: string) {
+    return this.s3Service.getObjectStream(key);
+  }
 }

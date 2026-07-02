@@ -102,6 +102,7 @@ export class UsersController {
     if (dto.avatar !== undefined) updateData.avatar = dto.avatar;
     if (dto.assistantName !== undefined) updateData.assistantName = dto.assistantName;
     if (dto.assistantEmoji !== undefined) updateData.assistantEmoji = dto.assistantEmoji;
+    if (dto.monthlyBudget !== undefined) updateData.monthlyBudget = dto.monthlyBudget;
 
     if (dto.waNumber !== undefined) {
       const current = await this.usersService.findOneById(userId);

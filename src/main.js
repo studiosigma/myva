@@ -116,6 +116,7 @@ class AppState {
           bio: this.profile.bio || '',
           plan: user.plan || 'free',
           role: user.role || 'user',
+          monthlyBudget: user.monthlyBudget || 0,
         };
         this.save('profile', this.profile);
 
@@ -542,6 +543,7 @@ const viewsMap = {
   files: 'Files Vault',
   contacts: 'Contacts Manager',
   calendar: 'Calendar Agenda',
+  finance: 'Finance & Anggaran',
   studio: 'Assistant Studio',
   settings: 'Settings',
   admin: 'Admin Panel'
@@ -702,6 +704,9 @@ function renderView(view) {
     case 'calendar':
       renderCalendarAgenda();
       break;
+    case 'finance':
+      renderFinancePage();
+      break;
     case 'studio':
       renderAssistantStudio();
       break;
@@ -711,6 +716,228 @@ function renderView(view) {
     case 'admin':
       renderAdminPage();
       break;
+  }
+}
+
+// --- FINANCE PAGE RENDERER ---
+let financeSearchQuery = '';
+let financeCategoryFilter = 'all';
+
+async function renderFinancePage() {
+  const totalExpense = state.expenses.reduce((sum, item) => sum + item.amount, 0);
+  const budgetLimit = state.profile.monthlyBudget || 0;
+  const remainingBudget = Math.max(0, budgetLimit - totalExpense);
+
+  const formattedTotal = new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0
+  }).format(totalExpense);
+
+  const formattedBudget = new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0
+  }).format(budgetLimit);
+
+  const formattedRemaining = new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0
+  }).format(remainingBudget);
+
+  const totalSpendEl = document.getElementById('finance-total-spend');
+  if (totalSpendEl) totalSpendEl.textContent = formattedTotal;
+
+  const totalCountEl = document.getElementById('finance-total-count');
+  if (totalCountEl) totalCountEl.textContent = `${state.expenses.length} transaksi`;
+
+  const budgetLimitEl = document.getElementById('finance-budget-limit');
+  if (budgetLimitEl) budgetLimitEl.textContent = budgetLimit > 0 ? formattedBudget : 'Belum diatur';
+
+  const budgetStatusTextEl = document.getElementById('finance-budget-status-text');
+  if (budgetStatusTextEl) {
+    if (budgetLimit > 0) {
+      const pct = Math.round((totalExpense / budgetLimit) * 100);
+      budgetStatusTextEl.textContent = `${pct}% terpakai`;
+    } else {
+      budgetStatusTextEl.textContent = 'Silakan atur limit anggaran';
+    }
+  }
+
+  const remainingBudgetEl = document.getElementById('finance-remaining-budget');
+  if (remainingBudgetEl) {
+    if (budgetLimit > 0) {
+      remainingBudgetEl.textContent = totalExpense > budgetLimit ? 'Limit Terlampaui' : formattedRemaining;
+    } else {
+      remainingBudgetEl.textContent = '-';
+    }
+  }
+
+  const progressBar = document.getElementById('finance-budget-progress');
+  const remainingIconBg = document.getElementById('finance-remaining-icon-bg');
+  if (progressBar) {
+    if (budgetLimit > 0) {
+      const pct = Math.min(100, Math.round((totalExpense / budgetLimit) * 100));
+      progressBar.style.width = `${pct}%`;
+      
+      if (pct >= 100) {
+        progressBar.style.backgroundColor = '#EF4444';
+        if (remainingIconBg) {
+          remainingIconBg.style.background = 'rgba(239, 68, 68, 0.1)';
+          remainingIconBg.style.color = '#EF4444';
+        }
+      } else if (pct >= 75) {
+        progressBar.style.backgroundColor = '#F59E0B';
+        if (remainingIconBg) {
+          remainingIconBg.style.background = 'rgba(245, 158, 11, 0.1)';
+          remainingIconBg.style.color = '#F59E0B';
+        }
+      } else {
+        progressBar.style.backgroundColor = '#10B981';
+        if (remainingIconBg) {
+          remainingIconBg.style.background = 'rgba(16, 185, 129, 0.1)';
+          remainingIconBg.style.color = '#10B981';
+        }
+      }
+    } else {
+      progressBar.style.width = '0%';
+      progressBar.style.backgroundColor = '#10B981';
+      if (remainingIconBg) {
+        remainingIconBg.style.background = 'rgba(16, 185, 129, 0.1)';
+        remainingIconBg.style.color = '#10B981';
+      }
+    }
+  }
+
+  const budgetInput = document.getElementById('fin-budget-amount');
+  if (budgetInput && !budgetInput.value && budgetLimit > 0) {
+    budgetInput.value = budgetLimit;
+  }
+
+  const categories = {};
+  state.expenses.forEach(item => {
+    categories[item.category] = (categories[item.category] || 0) + item.amount;
+  });
+
+  const breakdownContainer = document.getElementById('finance-category-breakdown-list');
+  if (breakdownContainer) {
+    breakdownContainer.innerHTML = '';
+    const CATEGORY_COLORS = {
+      Makanan: '#EAB308',
+      Tagihan: '#EF4444',
+      Belanja: '#A855F7',
+      Transportasi: '#3B82F6',
+      Lainnya: '#64748B'
+    };
+
+    if (Object.keys(categories).length === 0) {
+      breakdownContainer.innerHTML = `
+        <div style="text-align: center; color: var(--text-muted); font-style: italic; padding: 40px 0;">
+          Belum ada catatan pengeluaran bulan ini.
+        </div>`;
+    } else {
+      Object.entries(categories)
+        .sort((a, b) => b[1] - a[1])
+        .forEach(([cat, total]) => {
+          const pct = totalExpense > 0 ? (total / totalExpense) * 100 : 0;
+          const color = CATEGORY_COLORS[cat] || CATEGORY_COLORS.Lainnya;
+          const fmtAmt = new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            maximumFractionDigits: 0
+          }).format(total);
+
+          const progressDiv = document.createElement('div');
+          progressDiv.style.display = 'flex';
+          progressDiv.style.flexDirection = 'column';
+          progressDiv.style.gap = '6px';
+          progressDiv.innerHTML = `
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-primary);">
+              <span style="font-weight: 500;">${cat}</span>
+              <span style="font-weight: 600;">${fmtAmt} (${pct.toFixed(0)}%)</span>
+            </div>
+            <div style="height: 8px; background: rgba(15, 23, 42, 0.08); border-radius: 4px; overflow: hidden;">
+              <div style="height: 100%; width: ${pct}%; background: ${color}; border-radius: 4px;"></div>
+            </div>
+          `;
+          breakdownContainer.appendChild(progressDiv);
+        });
+    }
+  }
+
+  const tbody = document.getElementById('finance-transactions-tbody');
+  if (tbody) {
+    tbody.innerHTML = '';
+    
+    const filtered = state.expenses.filter(item => {
+      const matchesSearch = item.description.toLowerCase().includes(financeSearchQuery.toLowerCase());
+      const matchesCategory = financeCategoryFilter === 'all' || item.category.toLowerCase() === financeCategoryFilter.toLowerCase();
+      return matchesSearch && matchesCategory;
+    });
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 24px; font-style: italic;">
+            Tidak ada transaksi yang cocok dengan filter pencarian.
+          </td>
+        </tr>`;
+    } else {
+      filtered.forEach(item => {
+        const fmtItemAmt = new Intl.NumberFormat('id-ID', {
+          style: 'currency',
+          currency: 'IDR',
+          maximumFractionDigits: 0
+        }).format(item.amount);
+
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid var(--border-color)';
+        tr.style.transition = 'background-color 0.2s';
+        tr.className = 'transaction-row';
+        tr.innerHTML = `
+          <td style="padding: 12px 16px; color: var(--text-muted);">${item.date}</td>
+          <td style="padding: 12px 16px; font-weight: 500;">${escapeHtml(item.description)}</td>
+          <td style="padding: 12px 16px;">
+            <span class="badge" style="background: rgba(15, 23, 42, 0.05); color: var(--text-primary); padding: 3px 8px; border-radius: 4px; font-size: 11px;">
+              ${item.category}
+            </span>
+          </td>
+          <td style="padding: 12px 16px; text-align: right; font-weight: 600; color: #EF4444;">
+            - ${fmtItemAmt}
+          </td>
+          <td style="padding: 12px 16px; text-align: center;">
+            <button class="btn-delete-expense" data-id="${item.id}" style="background: none; border: none; color: #EF4444; cursor: pointer; padding: 4px; font-weight: 500; font-size: 12px;">
+              Hapus
+            </button>
+          </td>
+        `;
+
+        tr.querySelector('.btn-delete-expense').addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const id = e.target.getAttribute('data-id');
+          if (confirm('Apakah Anda yakin ingin menghapus catatan pengeluaran ini?')) {
+            if (state.token) {
+              try {
+                const success = await state.apiDelete(`/expenses/${id}`);
+                if (!success) throw new Error('API delete failed');
+                showToast('Catatan pengeluaran berhasil dihapus.');
+              } catch (err) {
+                console.error(err);
+                showToast('Gagal menghapus catatan pengeluaran.', 'error');
+                return;
+              }
+            }
+            const updated = state.expenses.filter(exp => exp.id !== id);
+            state.updateExpenses(updated);
+            renderFinancePage();
+            renderDashboard();
+          }
+        });
+
+        tbody.appendChild(tr);
+      });
+    }
   }
 }
 
@@ -4157,6 +4384,166 @@ function initEventListeners() {
       }
     });
   });
+
+  // --- Finance Event Listeners ---
+  const finAddForm = document.getElementById('finance-add-expense-form');
+  if (finAddForm) {
+    finAddForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const description = document.getElementById('fin-exp-desc').value.trim();
+      const amount = parseFloat(document.getElementById('fin-exp-amount').value);
+      const category = document.getElementById('fin-exp-category').value;
+      
+      const submitBtn = finAddForm.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" style="animation: spin 1s linear infinite; margin-right: 4px;"><circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.2)"></circle><path d="M4 12a8 8 0 0 1 8-8" stroke="#FFF" stroke-linecap="round"></path></svg> Menyimpan...`;
+      }
+
+      if (state.token) {
+        try {
+          const res = await state.apiPost('/expenses', { amount, description, category });
+          if (!res) throw new Error('Failed to save expense');
+          showToast('Catatan pengeluaran berhasil disimpan.');
+          finAddForm.reset();
+        } catch (err) {
+          console.error(err);
+          showToast('Gagal menyimpan catatan pengeluaran.', 'error');
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Simpan Catatan`;
+          }
+          return;
+        }
+      } else {
+        const mockExpense = {
+          id: `exp_mock_${Date.now()}`,
+          description,
+          amount,
+          category,
+          date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+        };
+        state.updateExpenses([mockExpense, ...state.expenses]);
+        showToast('Catatan pengeluaran berhasil disimpan (Mock).');
+        finAddForm.reset();
+      }
+
+      await state.syncWithBackend();
+      renderFinancePage();
+      renderDashboard();
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Simpan Catatan`;
+      }
+    });
+  }
+
+  const finBudgetForm = document.getElementById('finance-update-budget-form');
+  if (finBudgetForm) {
+    finBudgetForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const budgetAmount = parseFloat(document.getElementById('fin-budget-amount').value);
+
+      const submitBtn = finBudgetForm.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Menyimpan...';
+      }
+
+      if (state.token) {
+        try {
+          const res = await fetch(`${API_BASE_URL}/users/profile`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${state.token}`
+            },
+            body: JSON.stringify({ monthlyBudget: budgetAmount })
+          });
+          if (!res.ok) throw new Error('Failed to update budget');
+          showToast('Anggaran bulanan berhasil diperbarui.');
+        } catch (err) {
+          console.error(err);
+          showToast('Gagal memperbarui anggaran.', 'error');
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Simpan Limit';
+          }
+          return;
+        }
+      } else {
+        state.profile.monthlyBudget = budgetAmount;
+        state.save('profile', state.profile);
+        showToast('Anggaran bulanan berhasil diperbarui (Mock).');
+      }
+
+      await state.syncWithBackend();
+      renderFinancePage();
+      renderDashboard();
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Simpan Limit';
+      }
+    });
+  }
+
+  const finSearchInput = document.getElementById('finance-search-input');
+  if (finSearchInput) {
+    finSearchInput.addEventListener('input', (e) => {
+      financeSearchQuery = e.target.value;
+      renderFinancePage();
+    });
+  }
+
+  const finCategoryFilterEl = document.getElementById('finance-category-filter');
+  if (finCategoryFilterEl) {
+    finCategoryFilterEl.addEventListener('change', (e) => {
+      financeCategoryFilter = e.target.value;
+      renderFinancePage();
+    });
+  }
+
+  const finExportBtn = document.getElementById('finance-export-csv-btn');
+  if (finExportBtn) {
+    finExportBtn.addEventListener('click', async () => {
+      finExportBtn.disabled = true;
+      const oldHtml = finExportBtn.innerHTML;
+      finExportBtn.textContent = 'Mengekspor...';
+
+      if (state.expenses.length === 0) {
+        showToast('Tidak ada transaksi untuk diekspor.', 'warning');
+        finExportBtn.innerHTML = oldHtml;
+        finExportBtn.disabled = false;
+        return;
+      }
+
+      try {
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Tanggal,Deskripsi,Kategori,Nominal\r\n";
+        
+        state.expenses.forEach(item => {
+          const row = `"${item.date}","${item.description.replace(/"/g, '""')}","${item.category}",${item.amount}`;
+          csvContent += row + "\r\n";
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `laporan_pengeluaran_${Date.now()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        showToast('Laporan pengeluaran berhasil diunduh.');
+      } catch (err) {
+        console.error(err);
+        showToast('Gagal mengekspor data.', 'error');
+      }
+
+      finExportBtn.innerHTML = oldHtml;
+      finExportBtn.disabled = false;
+    });
+  }
 }
 
 // --- FILE MOCK UPLOAD & SUMMARY ---

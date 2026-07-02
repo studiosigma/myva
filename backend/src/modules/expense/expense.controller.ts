@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
+  Param,
   Body,
   UseGuards,
 } from '@nestjs/common';
@@ -35,5 +37,13 @@ export class ExpenseController {
   @ApiOperation({ summary: 'Get monthly category spending aggregations' })
   async getStats(@GetUser('id') userId: string) {
     return this.expenseService.getMonthlyStats(userId);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete a financial expense' })
+  @ApiResponse({ status: 200, description: 'Expense deleted successfully.' })
+  async delete(@GetUser('id') userId: string, @Param('id') id: string) {
+    await this.expenseService.delete(userId, id);
+    return { success: true };
   }
 }

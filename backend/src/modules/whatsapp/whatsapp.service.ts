@@ -9,6 +9,7 @@ import { normalizePhoneNumber } from '../../common/utils/phone-utils';
 import { S3Service } from '../../integrations/s3.service';
 import { AIService } from '../ai/ai.service';
 import { CacheService } from '../cache/cache.service';
+import { ExpenseService } from '../expense/expense.service';
 
 @Injectable()
 export class WhatsAppService {
@@ -40,6 +41,7 @@ export class WhatsAppService {
     private readonly s3Service: S3Service,
     private readonly aiService: AIService,
     private readonly cacheService: CacheService,
+    private readonly expenseService: ExpenseService,
     @InjectQueue('file_processing_queue') private readonly fileProcessingQueue: Queue,
     @InjectQueue('reminder_queue') private readonly reminderQueue: Queue,
   ) {}
@@ -684,11 +686,49 @@ export class WhatsAppService {
         },
       });
 
-      const replyText = `📸 *Hasil Analisis Gambar Anda*:\n\n📝 *Deskripsi*:\n${analysis.description}\n\n${
-        analysis.extractedText
-          ? `🔍 *Teks yang Ditemukan (OCR)*:\n_${analysis.extractedText.trim()}_\n\n`
-          : ''
-      }_Hasil analisis ini telah disimpan dengan aman di Memory Center Anda._`;
+      let replyText = `📸 *Hasil Analisis Gambar Anda*:\n\n📝 *Deskripsi*:\n${analysis.description}\n\n`;
+
+      if (analysis.isReceipt && analysis.expenseDetails && analysis.expenseDetails.amount > 0) {
+        const exp = await this.expenseService.create(user.id, {
+          amount: analysis.expenseDetails.amount,
+          description: analysis.expenseDetails.description,
+          category: analysis.expenseDetails.category,
+        });
+
+        const currencyFormatter = new Intl.NumberFormat('id-ID', {
+          style: 'currency',
+          currency: 'IDR',
+          maximumFractionDigits: 0
+        });
+
+        const formattedAmount = currencyFormatter.format(exp.amount);
+        const monthlyTotal = await this.expenseService.getMonthlyTotal(user.id);
+        const categoryTotal = await this.expenseService.getMonthlyCategoryTotal(user.id, exp.category);
+
+        const formattedMonthlyTotal = currencyFormatter.format(monthlyTotal);
+        const formattedCategoryTotal = currencyFormatter.format(categoryTotal);
+
+        let budgetAlert = '';
+        const budgetStatus = await this.expenseService.checkBudgetStatus(user.id);
+        if (budgetStatus.hasBudget) {
+          const formattedBudget = currencyFormatter.format(budgetStatus.monthlyBudget);
+          const formattedRemaining = currencyFormatter.format(Math.abs(budgetStatus.remaining));
+
+          if (budgetStatus.status === 'exceeded') {
+            budgetAlert = `\n\n🔴 *PERINGATAN: Anggaran Bulanan Terlampaui!*\nAnggaran: ${formattedBudget} | Terpakai: ${budgetStatus.percentage}%\nAnda telah melebihi anggaran sebesar *${formattedRemaining}*. Pertimbangkan untuk mengurangi pengeluaran di sisa bulan ini.`;
+          } else if (budgetStatus.status === 'warning') {
+            budgetAlert = `\n\n🟡 *Perhatian: Anggaran Hampir Habis!*\nAnggaran: ${formattedBudget} | Terpakai: ${budgetStatus.percentage}%\nSisa anggaran Anda tinggal *${formattedRemaining}*. Bijak mengatur pengeluaran ya!`;
+          }
+        }
+
+        replyText += `💸 *Pengeluaran Berhasil Dicatat dari Struk!*\n• *Deskripsi:* ${exp.description}\n• *Jumlah:* ${formattedAmount}\n• *Kategori:* ${exp.category}\n\n📈 *Rekap Bulan Ini*:\n• Total Kategori *${exp.category}*: ${formattedCategoryTotal}\n• Total Semua Pengeluaran: ${formattedMonthlyTotal}${budgetAlert}\n\n`;
+      }
+
+      if (analysis.extractedText) {
+        replyText += `🔍 *Teks yang Ditemukan (OCR)*:\n_${analysis.extractedText.trim()}_\n\n`;
+      }
+
+      replyText += `_Hasil analisis ini telah disimpan dengan aman di Memory Center Anda._`;
 
       await this.prisma.message.create({
         data: {

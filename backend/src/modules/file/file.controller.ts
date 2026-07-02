@@ -8,7 +8,10 @@ import {
   UploadedFile,
   UseGuards,
   BadRequestException,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
+import { Readable } from 'stream';
 import { FileService } from './file.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -70,5 +73,30 @@ export class FileController {
   @ApiOperation({ summary: 'Delete file from vault and S3 compatible storage' })
   async remove(@GetUser('id') userId: string, @Param('id') id: string) {
     return this.fileService.remove(userId, id);
+  }
+}
+
+@ApiTags('Files (Public Download)')
+@Controller('public/file')
+export class FilePublicController {
+  constructor(private readonly fileService: FileService) {}
+
+  @Get('download/:id')
+  @ApiOperation({ summary: 'Download file from vault publicly via UUID' })
+  async download(
+    @Param('id') id: string,
+    @Res() res: Response,
+  ) {
+    const fileRecord = await this.fileService.findOnePublic(id);
+    const stream = await this.fileService.getObjectStream(fileRecord.storagePath) as any;
+
+    res.setHeader('Content-Type', fileRecord.mimeType);
+    res.setHeader('Content-Disposition', `attachment; filename="${fileRecord.filename}"`);
+
+    if (stream && typeof stream.pipe === 'function') {
+      stream.pipe(res);
+    } else {
+      res.send(stream);
+    }
   }
 }
