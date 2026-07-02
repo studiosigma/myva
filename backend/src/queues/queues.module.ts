@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, Global } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
@@ -9,6 +9,7 @@ import { EmailProcessor } from './processors/email.processor';
 import { IntegrationsModule } from '../integrations/integrations.module';
 import { AIModule } from '../modules/ai/ai.module';
 
+@Global()
 @Module({
   imports: [
     IntegrationsModule,
@@ -99,6 +100,6 @@ import { AIModule } from '../modules/ai/ai.module';
     AIProcessor,
     EmailProcessor,
   ],
-  exports: [BullModule],
+  exports: [BullModule, 'SHARED_REDIS_CONNECTION'],
 })
 export class QueuesModule {}

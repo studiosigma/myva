@@ -204,4 +204,39 @@ export class WhatsAppApiService {
       return false;
     }
   }
+
+  async sendImage(to: string, imageOption: { id?: string; link?: string }, caption?: string): Promise<boolean> {
+    const url = `https://graph.facebook.com/${this.version}/${this.phoneNumberId}/messages`;
+    this.logger.log(`[WhatsApp API] Sending image to ${to} (${imageOption.id ? 'Media ID: ' + imageOption.id : 'Link: ' + imageOption.link})`);
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to,
+          type: 'image',
+          image: { 
+            ...(imageOption.id ? { id: imageOption.id } : { link: imageOption.link }),
+            ...(caption ? { caption } : {}),
+          },
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        this.logger.error(`WhatsApp Send Image Error: ${JSON.stringify(data)}`);
+        return false;
+      }
+      this.logger.log(`WhatsApp image sent successfully.`);
+      return true;
+    } catch (error) {
+      this.logger.error(`Failed to send WhatsApp image: ${error.message}`);
+      return false;
+    }
+  }
 }

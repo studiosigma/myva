@@ -1,8 +1,11 @@
-import { Controller, Get, Post, Body, Query, HttpCode, HttpStatus, Logger, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, HttpCode, HttpStatus, Logger, Req, UseGuards } from '@nestjs/common';
 import { WhatsAppService } from './whatsapp.service';
 import { ConfigService } from '@nestjs/config';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import * as crypto from 'crypto';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { GetUser } from '../../common/decorators/get-user.decorator';
+import { BriefingService } from './briefing.service';
 
 @ApiTags('WhatsApp Webhook')
 @Controller('whatsapp')
@@ -12,6 +15,7 @@ export class WhatsAppController {
   constructor(
     private readonly whatsappService: WhatsAppService,
     private readonly configService: ConfigService,
+    private readonly briefingService: BriefingService,
   ) {}
 
   private validateSignature(req: any): boolean {
@@ -129,5 +133,14 @@ export class WhatsAppController {
       success: true,
       reply,
     };
+  }
+
+  @Post('test-weekly-report')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Trigger a test weekly expense report via WhatsApp and Email for the authenticated user' })
+  async triggerTestWeeklyReport(@GetUser('id') userId: string) {
+    await this.briefingService.sendWeeklyExpenseReport(userId);
+    return { success: true, message: 'Weekly report triggered successfully.' };
   }
 }

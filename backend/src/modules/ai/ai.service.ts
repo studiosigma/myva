@@ -200,6 +200,7 @@ PENTING:
       meeting_assistant: 'Meeting Assistant: Bantu mencatat notulen rapat secara otomatis, merangkum poin pembicaraan penting, dan menandai butir tindakan selanjutnya.',
       email_assistant: 'Email Assistant: Bantu menyusun draf email bisnis formal maupun kasual dengan tata bahasa yang profesional.',
       contact_manager: 'Contact Manager: Bantu mengelola buku alamat pengguna, mencari nomor WhatsApp, atau menyimpan info kontak baru.',
+      weekly_expense_report: 'Weekly Expense Report: Berikan analisis keuangan pribadi yang ringkas, ramah, dan bermanfaat berdasarkan pengeluaran pengguna selama seminggu terakhir dan anggaran bulanan mereka.',
     };
 
     const globalConfig = await this.prisma.systemConfig.findUnique({

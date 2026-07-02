@@ -7,10 +7,16 @@ export class EmailProcessor extends WorkerHost {
   private readonly logger = new Logger(EmailProcessor.name);
 
   async process(job: Job<any, any, string>): Promise<any> {
-    const { to, subject, template } = job.data;
+    const { to, subject, template, text, html } = job.data;
     this.logger.log(`Processing transactional email job ${job.id} to ${to}`);
     // Simulate sending email
     this.logger.log(`[Email Service Output] Dispatched email: "${subject}" to ${to} using template: ${template}`);
+    if (text) {
+      this.logger.log(`[Email Text Body]\n${text}`);
+    }
+    if (html) {
+      this.logger.log(`[Email HTML Body]\n${html}`);
+    }
     return { success: true };
   }
 }
