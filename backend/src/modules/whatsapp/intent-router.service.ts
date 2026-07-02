@@ -457,17 +457,18 @@ export class IntentRouterService {
 
       // 4. INTENT: CREATE MEMORY (NOTE)
       if (intent === 'CREATE_MEMORY') {
-        const fullContent = extracted?.title || text.replace(/^(catat|remember|tulis catatan)\s+/i, '').trim();
-        const title = fullContent.split('\n')[0].substring(0, 40) + (fullContent.length > 40 ? '...' : '');
+        const cleanContent = text.replace(/^(catat|remember|tulis catatan|ingat)\s+/i, '').trim();
+        const title = extracted?.title || cleanContent.split('\n')[0].substring(0, 40) + (cleanContent.length > 40 ? '...' : '');
         
         const memory = await this.memoryService.create(userId, {
           title,
-          content: fullContent,
+          content: cleanContent,
           category: MemoryCategory.NOTES,
         });
 
         return `🧠 Catatan berhasil disimpan di Memory Center!\n\n*Judul:* ${memory.title}\n*Category:* Notes`;
       }
+
 
       // 5. INTENT: CREATE CONTACT
       if (intent === 'CREATE_CONTACT') {
