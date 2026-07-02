@@ -348,60 +348,72 @@ export class IntentRouterService {
 
       // 3.5. INTENT: SMART EXPENSE TRACKER
       if (intent === 'TRACK_EXPENSE') {
-        const amount = extracted?.amount || 0;
-        const description = extracted?.description || text;
-        const category = extracted?.category || 'Other';
+        const parsedExpenses = await this.aiService.parseExpenses(text);
 
-        if (amount <= 0) {
-          this.pendingActions.set(userId, {
-            intent: 'TRACK_EXPENSE',
-            extracted: {
-              description,
-              category,
-            },
-            timestamp: Date.now(),
-          });
-          const question = await this.aiService.generateClarificationQuestion(
-            'TRACK_EXPENSE',
-            text,
-            'nominal uang (amount)',
-          );
-          return question;
+        if (parsedExpenses.length === 0) {
+          const amount = extracted?.amount || 0;
+          const description = extracted?.description || text;
+          const category = extracted?.category || 'Other';
+
+          if (amount <= 0) {
+            this.pendingActions.set(userId, {
+              intent: 'TRACK_EXPENSE',
+              extracted: {
+                description,
+                category,
+              },
+              timestamp: Date.now(),
+            });
+            const question = await this.aiService.generateClarificationQuestion(
+              'TRACK_EXPENSE',
+              text,
+              'nominal uang (amount)',
+            );
+            return question;
+          }
+          parsedExpenses.push({ amount, description, category });
         }
 
-        const expense = await this.expenseService.create(userId, {
-          amount,
-          description,
-          category,
-        });
+        const createdExpenses = [];
+        for (const item of parsedExpenses) {
+          const expense = await this.expenseService.create(userId, {
+            amount: item.amount,
+            description: item.description,
+            category: item.category,
+          });
+          createdExpenses.push(expense);
+        }
 
-        const formattedAmount = new Intl.NumberFormat('id-ID', {
+        const currencyFormatter = new Intl.NumberFormat('id-ID', {
           style: 'currency',
           currency: 'IDR',
           maximumFractionDigits: 0
-        }).format(expense.amount);
+        });
+
+        let summaryText = '';
+        if (createdExpenses.length === 1) {
+          const exp = createdExpenses[0];
+          summaryText = `💸 *Pengeluaran Berhasil Dicatat!*\n\n*Deskripsi:* ${exp.description}\n*Jumlah:* ${currencyFormatter.format(exp.amount)}\n*Kategori:* ${exp.category}`;
+        } else {
+          summaryText = `💸 *${createdExpenses.length} Pengeluaran Berhasil Dicatat!*\n\n`;
+          createdExpenses.forEach((exp, idx) => {
+            summaryText += `${idx + 1}. *${exp.description}* (${exp.category}) - ${currencyFormatter.format(exp.amount)}\n`;
+          });
+        }
 
         // Fetch monthly summary stats for enhanced user response
         const monthlyTotal = await this.expenseService.getMonthlyTotal(userId);
-        const categoryTotal = await this.expenseService.getMonthlyCategoryTotal(userId, category);
+        const lastCategory = createdExpenses[createdExpenses.length - 1].category;
+        const categoryTotal = await this.expenseService.getMonthlyCategoryTotal(userId, lastCategory);
 
-        const formattedMonthlyTotal = new Intl.NumberFormat('id-ID', {
-          style: 'currency',
-          currency: 'IDR',
-          maximumFractionDigits: 0
-        }).format(monthlyTotal);
-
-        const formattedCategoryTotal = new Intl.NumberFormat('id-ID', {
-          style: 'currency',
-          currency: 'IDR',
-          maximumFractionDigits: 0
-        }).format(categoryTotal);
+        const formattedMonthlyTotal = currencyFormatter.format(monthlyTotal);
+        const formattedCategoryTotal = currencyFormatter.format(categoryTotal);
 
         let budgetAlert = '';
         const budgetStatus = await this.expenseService.checkBudgetStatus(userId);
         if (budgetStatus.hasBudget) {
-          const formattedBudget = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(budgetStatus.monthlyBudget);
-          const formattedRemaining = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Math.abs(budgetStatus.remaining));
+          const formattedBudget = currencyFormatter.format(budgetStatus.monthlyBudget);
+          const formattedRemaining = currencyFormatter.format(Math.abs(budgetStatus.remaining));
 
           if (budgetStatus.status === 'exceeded') {
             budgetAlert = `\n\n🔴 *PERINGATAN: Anggaran Bulanan Terlampaui!*\nAnggaran: ${formattedBudget} | Terpakai: ${budgetStatus.percentage}%\nAnda telah melebihi anggaran sebesar *${formattedRemaining}*. Pertimbangkan untuk mengurangi pengeluaran di sisa bulan ini.`;
@@ -410,7 +422,7 @@ export class IntentRouterService {
           }
         }
 
-        return `💸 *Pengeluaran Berhasil Dicatat!*\n\n*Deskripsi:* ${expense.description}\n*Jumlah:* ${formattedAmount}\n*Kategori:* ${expense.category}\n\n📈 *Rekap Bulan Ini*:\n• Total Kategori *${expense.category}*: ${formattedCategoryTotal}\n• Total Semua Pengeluaran: ${formattedMonthlyTotal}\n\n_Catatan keuangan Anda telah diperbarui di dashboard._${budgetAlert}`;
+        return `${summaryText}\n\n📈 *Rekap Bulan Ini*:\n• Total Kategori *${lastCategory}*: ${formattedCategoryTotal}\n• Total Semua Pengeluaran: ${formattedMonthlyTotal}\n\n_Catatan keuangan Anda telah diperbarui di dashboard._${budgetAlert}`;
       }
 
       // 3.6. INTENT: SET BUDGET

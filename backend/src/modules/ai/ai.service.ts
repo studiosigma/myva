@@ -952,6 +952,68 @@ Instructions:
     }
   }
 
+  async parseExpenses(text: string): Promise<{ amount: number; description: string; category: string }[]> {
+    try {
+      const apiKey = this.geminiApiKey;
+      if (!apiKey) {
+        throw new Error('GEMINI_API_KEY is not configured.');
+      }
+
+      const prompt = `
+        Analyze the following text and extract all financial expenses.
+        The text may contain one or multiple expense items.
+        For each expense item, extract:
+        - "amount": The total numeric value of the expense. Calculate arithmetic, quantities, or discounts if present (e.g. "beli kopi 15rb x 3" -> 45000, "150rb diskon 20rb" -> 130000).
+        - "description": The item name or description of the expense. Keep it short, clean, and in the language of the input.
+        - "category": Choose one of the standard categories: "Food", "Bills", "Transportation", "Entertainment", "Shopping", "Other".
+
+        Return the response strictly as a JSON array of objects with the fields: "amount" (number), "description" (string), "category" (string).
+        If no expenses are found, return an empty array [].
+
+        Input text: "${text}"
+      `;
+
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      const payload = {
+        contents: [
+          {
+            parts: [{ text: prompt }]
+          }
+        ],
+        generationConfig: {
+          responseMimeType: 'application/json',
+        },
+      };
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Gemini API responded with status ${response.status}`);
+      }
+
+      const data = (await response.json()) as any;
+      const jsonStr = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
+      const parsed = JSON.parse(jsonStr);
+      if (Array.isArray(parsed)) {
+        return parsed.map(item => ({
+          amount: Number(item.amount) || 0,
+          description: String(item.description || '').trim(),
+          category: String(item.category || 'Other').trim(),
+        }));
+      }
+      return [];
+    } catch (error) {
+      this.logger.error(`Gemini parseExpenses Error: ${error.message}`);
+      return [];
+    }
+  }
+
   async generateSpeech(text: string): Promise<Buffer> {
     const openaiKey = this.configService.get<string>('OPENAI_API_KEY');
     
