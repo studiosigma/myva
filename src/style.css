@@ -95,6 +95,9 @@ input, button, select, textarea {
   border: 1px solid transparent;
   font-size: 14px;
 }
+.btn:active {
+  transform: scale(0.96);
+}
 
 .btn-primary {
   background-color: var(--primary-color);
@@ -545,7 +548,7 @@ input, button, select, textarea {
 }
 
 /* Mobile nav hidden on desktop */
-.bottom-nav {
+.bottom-nav, .speed-dial-overlay, .dashboard-tabs {
   display: none;
 }
 
@@ -578,6 +581,63 @@ input, button, select, textarea {
   margin-bottom: 6px;
   letter-spacing: -0.3px;
   color: var(--text-primary);
+}
+
+/* WhatsApp Status Badge in Hero Card */
+.whatsapp-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  transition: all 0.2s ease;
+  font-family: 'Inter', sans-serif;
+}
+
+.whatsapp-status-badge.connected {
+  background-color: rgba(37, 211, 102, 0.1);
+  color: #128c7e;
+  border: 1px solid rgba(37, 211, 102, 0.18);
+}
+
+.whatsapp-status-badge.connected .status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #25d366;
+  box-shadow: 0 0 8px #25d366;
+  animation: pulse-dot 2s infinite;
+}
+
+.whatsapp-status-badge.disconnected {
+  background-color: rgba(239, 68, 68, 0.08);
+  color: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.12);
+}
+
+.whatsapp-status-badge.disconnected .status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #ef4444;
+}
+
+@keyframes pulse-dot {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.5);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 5px rgba(37, 211, 102, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(37, 211, 102, 0);
+  }
 }
 
 .hero-tagline {
@@ -819,6 +879,9 @@ input, button, select, textarea {
   border-color: #CBD5E1;
   background-color: #F8FAFC;
 }
+.checklist-item:active {
+  transform: scale(0.98);
+}
 
 /* Custom Checkbox */
 .checkbox-container {
@@ -1018,6 +1081,9 @@ input, button, select, textarea {
 .memory-card:hover {
   box-shadow: var(--shadow-md);
   border-color: #CBD5E1;
+}
+.memory-card:active {
+  transform: scale(0.98);
 }
 
 .memory-card-header {
@@ -3122,7 +3188,7 @@ input:checked + .slider:before {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  animation: modalScaleUp 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: modalScaleUp 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.1);
 }
 
 @keyframes modalScaleUp {
@@ -3196,7 +3262,7 @@ input:checked + .slider:before {
   box-shadow: -10px 0 25px -5px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
-  animation: drawerSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: drawerSlideIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.1);
 }
 
 @keyframes drawerSlideIn {
@@ -3376,26 +3442,76 @@ input:checked + .slider:before {
 
   /* Main content padding adjustment */
   .main-layout {
-    height: calc(100vh - 64px); /* Subtract bottom nav height */
+    height: calc(100vh - 64px);
+    height: calc(100dvh - 64px);
   }
 
   .app-header {
     padding: 0 16px;
     height: 60px;
+    border-bottom: 1px solid rgba(227, 226, 222, 0.6);
+  }
+
+  .header-search-container {
+    gap: 12px;
+  }
+
+  .mobile-menu-btn {
+    display: inline-flex;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background-color: var(--primary-bg-light);
+    color: var(--text-primary);
+    margin-right: 0;
   }
 
   .header-settings-btn {
     display: flex; /* Show on mobile/tablet since sidebar settings is hidden */
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background-color: var(--primary-bg-light);
+    color: var(--text-primary);
+    border: none;
+  }
+
+  .view-title {
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .sync-badge {
+    padding: 6px;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-color: rgba(37, 211, 102, 0.2);
+    background-color: rgba(37, 211, 102, 0.08);
+  }
+
+  .sync-badge .sync-dot {
+    width: 8px;
+    height: 8px;
+    margin: 0;
   }
 
   .content-body {
-    padding: 16px;
+    padding: 16px 16px calc(80px + env(safe-area-inset-bottom, 0px)) 16px;
   }
 
   .hero-card {
-    padding: 20px;
+    padding: 22px;
     flex-direction: column;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
+    background: linear-gradient(135deg, #FCFCFC 0%, #F5F7FF 100%);
+    border: 1px solid rgba(99, 102, 241, 0.12);
+    box-shadow: 0 4px 20px -2px rgba(99, 102, 241, 0.03);
+    border-radius: 18px;
+    gap: 16px;
   }
 
   .hero-content {
@@ -3403,20 +3519,90 @@ input:checked + .slider:before {
   }
 
   .hero-greeting {
-    font-size: 22px;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  .hero-tagline {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 4px;
   }
 
   .hero-visual {
     display: none;
   }
 
+  .hero-stats {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  .hero-stat-pill {
+    flex: 1;
+    background-color: #FFFFFF;
+    border: 1px solid var(--border-color);
+    padding: 10px 8px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.015);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .hero-stat-pill:active {
+    transform: scale(0.96);
+    box-shadow: none;
+  }
+
+  .hero-stat-number {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary-color);
+  }
+
+  .hero-stat-label {
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+  }
+
   .stats-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
-    margin-bottom: 20px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
   }
 
   .stat-card {
+    padding: 14px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    border-radius: 16px;
+    background-color: #FFFFFF;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.015);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .stat-card:active {
+    transform: scale(0.96);
+    box-shadow: none;
+  }
+
+  .stat-card:last-child {
+    grid-column: span 2;
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
     padding: 16px;
   }
 
@@ -3481,14 +3667,21 @@ input:checked + .slider:before {
   /* Show Bottom Navigation Bar */
   .bottom-nav {
     display: flex;
-    height: 64px;
-    background-color: var(--card-bg);
-    border-top: 1px solid var(--border-color);
+    justify-content: space-around;
+    align-items: center;
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     z-index: 100;
+    background-color: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(227, 226, 222, 0.5);
+    box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.04);
+    padding-top: 6px;
+    padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+    height: calc(64px + env(safe-area-inset-bottom, 0px));
   }
 
   .bottom-nav-item {
@@ -3502,16 +3695,56 @@ input:checked + .slider:before {
     font-size: 10px;
     font-weight: 500;
     gap: 4px;
+    transition: all 0.2s ease;
+    height: 100%;
+  }
+
+  .bottom-nav-item:active:not(.quick-add-btn) {
+    transform: scale(0.95);
   }
 
   .bottom-nav-item.active {
-    color: var(--secondary-color);
+    color: var(--primary-color);
     font-weight: 700;
   }
 
   .bottom-nav-icon {
     width: 20px;
     height: 20px;
+    transition: transform 0.2s ease;
+  }
+
+  .bottom-nav-item.active .bottom-nav-icon {
+    transform: translateY(-1px);
+  }
+
+  /* Center Quick Add FAB Button */
+  .bottom-nav-item.quick-add-btn {
+    flex: 0 0 46px;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    color: #FFFFFF !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 10px;
+    transform: translateY(-12px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    border: 3px solid #FFFFFF;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+  }
+
+  .bottom-nav-item.quick-add-btn:active {
+    transform: translateY(-12px) scale(0.9);
+    box-shadow: 0 2px 6px rgba(99, 102, 241, 0.2);
+  }
+  
+  .bottom-nav-item.quick-add-btn svg {
+    width: 22px;
+    height: 22px;
+    stroke: #FFFFFF;
   }
 
   /* Modal responsive sizing */
@@ -3584,9 +3817,13 @@ input:checked + .slider:before {
     width: 280px;
     max-width: 82vw;
     transform: translateX(-100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     z-index: 200;
-    box-shadow: var(--shadow-lg);
+    box-shadow: 0 10px 40px -10px rgba(15, 23, 42, 0.22);
+    background-color: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-right: 1px solid rgba(227, 226, 222, 0.5);
   }
   .sidebar.minimized { width: 280px; max-width: 82vw; }
   /* Neutralize the minimized-collapse visuals inside the mobile drawer */
@@ -3595,10 +3832,39 @@ input:checked + .slider:before {
   .sidebar.minimized .user-info { display: flex; }
   .sidebar.minimized .sidebar-header { padding: 24px; justify-content: flex-start; }
   .sidebar.minimized .logo-container { gap: 12px; justify-content: flex-start; }
-  .sidebar.minimized .sidebar-nav { padding: 24px 16px; }
-  .sidebar.minimized .nav-item { justify-content: flex-start; padding: 10px 14px; gap: 12px; }
+  
+  .sidebar-nav, .sidebar.minimized .sidebar-nav {
+    padding: 20px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  
+  .nav-item, .sidebar.minimized .nav-item {
+    justify-content: flex-start;
+    padding: 12px 14px;
+    gap: 12px;
+    font-size: 14.5px;
+    font-weight: 500;
+    border-radius: 10px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .nav-item:active, .sidebar.minimized .nav-item:active {
+    transform: scale(0.97);
+  }
+  .nav-item.active, .sidebar.minimized .nav-item.active {
+    background-color: var(--primary-light, #EEF2FF);
+    color: var(--primary-color, #6366F1) !important;
+    font-weight: 600;
+  }
   .sidebar.minimized .sidebar-footer { padding: 16px; justify-content: flex-start; }
-  .sidebar.minimized .user-profile { background-color: #F1F1EF; padding: 8px; justify-content: flex-start; }
+  .sidebar.minimized .user-profile {
+    background-color: rgba(241, 241, 239, 0.6);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(227, 226, 222, 0.3);
+    padding: 8px;
+    justify-content: flex-start;
+  }
 
   .app-layout.nav-open .sidebar { transform: translateX(0); }
   .app-layout.nav-open .sidebar-scrim { display: block; opacity: 1; }
@@ -3613,6 +3879,201 @@ input:checked + .slider:before {
     height: calc(64px + env(safe-area-inset-bottom, 0));
   }
   .landing-active .bottom-nav { display: none; }
+
+  /* WhatsApp CTA Card Mobile Optimization */
+  .whatsapp-cta-card {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 16px !important;
+    padding: 20px !important;
+    background: linear-gradient(135deg, #f0fdf4, #dcfce7) !important;
+    border-color: rgba(37, 211, 102, 0.25) !important;
+    box-shadow: 0 4px 20px -2px rgba(34, 197, 94, 0.08) !important;
+    border-radius: 16px !important;
+  }
+
+  .whatsapp-cta-card > div {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .whatsapp-cta-card .whatsapp-cta-icon-wrapper {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  .whatsapp-cta-card .whatsapp-cta-details h4 {
+    font-size: 15px !important;
+  }
+
+  .whatsapp-cta-card .whatsapp-cta-details p {
+    font-size: 12.5px !important;
+  }
+
+  .whatsapp-cta-card .btn {
+    width: 100% !important;
+    text-align: center !important;
+    justify-content: center !important;
+    padding: 12px !important;
+    font-size: 14px !important;
+    border-radius: 10px !important;
+  }
+
+  /* Speed Dial / Bottom Sheet Overlay */
+  .speed-dial-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+
+  .speed-dial-overlay.active {
+    display: flex;
+    opacity: 1;
+  }
+
+  .speed-dial-sheet {
+    width: 100%;
+    max-width: 480px;
+    background-color: var(--card-bg);
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
+    padding: 24px 20px calc(24px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.08);
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .speed-dial-overlay.active .speed-dial-sheet {
+    transform: translateY(0);
+  }
+
+  .speed-dial-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .speed-dial-header h4 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .speed-dial-close-btn {
+    border: none;
+    background: none;
+    font-size: 24px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+  }
+
+  .speed-dial-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .speed-dial-opt-btn {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    background-color: #FFFFFF;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    width: 100%;
+  }
+
+  .speed-dial-opt-btn:active {
+    background-color: var(--primary-bg-light);
+    transform: scale(0.98);
+  }
+
+  .speed-dial-opt-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #FFFFFF;
+    flex-shrink: 0;
+  }
+
+  .speed-dial-opt-icon svg {
+    stroke: #FFFFFF;
+  }
+
+  .speed-dial-opt-btn span {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  /* Mobile Segmented Dashboard Tabs */
+  .dashboard-tabs {
+    display: flex;
+    background-color: var(--primary-bg-light);
+    padding: 4px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    gap: 4px;
+    border: 1px solid var(--border-color);
+  }
+
+  .dash-tab-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: none;
+    background: none;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    text-align: center;
+  }
+
+  .dash-tab-btn:active {
+    transform: scale(0.97);
+  }
+
+  .dash-tab-btn.active {
+    background-color: #FFFFFF;
+    color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Filter content by tab active class */
+  .dash-tab-content {
+    display: none !important;
+  }
+
+  .dash-tab-content.active {
+    display: block !important;
+  }
+
+  .split-grid.dash-tab-content.active {
+    display: grid !important;
+  }
 
   /* Prevent iOS auto-zoom when focusing inputs */
   input, select, textarea, .form-input { font-size: 16px; }
@@ -6517,33 +6978,7 @@ input:checked + .slider:before {
    MOBILE POLISH (visual) — appended last so it wins over earlier media queries
    ========================================================================== */
 
-/* Bottom navigation: clean frosted surface + clear active state */
-@media (max-width: 768px) {
-  .bottom-nav {
-    background-color: rgba(255, 255, 255, 0.92);
-    backdrop-filter: saturate(180%) blur(12px);
-    -webkit-backdrop-filter: saturate(180%) blur(12px);
-    box-shadow: 0 -1px 0 rgba(15, 23, 42, 0.06), 0 -6px 18px rgba(15, 23, 42, 0.05);
-    padding-top: 5px;
-  }
-  .bottom-nav-item {
-    padding: 6px 4px 9px;
-    border-radius: 14px;
-    transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
-  }
-  .bottom-nav-item:active {
-    background-color: var(--primary-bg-light);
-    transform: scale(0.95);
-  }
-  .bottom-nav-item.active {
-    color: var(--primary-color);
-    background-color: var(--primary-light);
-    font-weight: 700;
-  }
-  .bottom-nav-item.active .bottom-nav-icon {
-    transform: translateY(-1px);
-  }
-}
+
 
 /* Header gets a subtle frosted separation on mobile */
 @media (max-width: 768px) {
@@ -6630,6 +7065,33 @@ input:checked + .slider:before {
   textarea,
   .btn {
     min-height: 44px;
+  }
+}
+
+/* Sembunyikan tombol-tombol "+ Add..." redundan di area konten */
+#btn-open-memory-modal,
+#btn-open-reminder-modal,
+#btn-open-event-modal {
+  display: none !important;
+}
+
+/* Optimasi tata letak header untuk layar sangat sempit */
+@media (max-width: 375px) {
+  .app-header {
+    padding: 0 8px !important;
+  }
+  .header-search-container {
+    gap: 6px !important;
+  }
+  .header-right-container {
+    gap: 8px !important;
+  }
+  .view-title {
+    font-size: 15px !important;
+  }
+  #header-action-btn {
+    padding: 6px 10px !important;
+    font-size: 12px !important;
   }
 }
 

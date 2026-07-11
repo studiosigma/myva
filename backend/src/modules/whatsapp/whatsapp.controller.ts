@@ -23,8 +23,15 @@ export class WhatsAppController {
     const appSecret = this.configService.get<string>('WHATSAPP_APP_SECRET');
 
     if (!appSecret) {
-      this.logger.warn('WHATSAPP_APP_SECRET is not configured. Webhook signature verification bypassed.');
-      return true;
+      // Fail closed outside development: an unverified webhook means anyone
+      // could spoof messages to the assistant. Only bypass in local dev.
+      const nodeEnv = this.configService.get<string>('NODE_ENV');
+      if (nodeEnv === 'development') {
+        this.logger.warn('WHATSAPP_APP_SECRET is not configured. Webhook signature verification bypassed (DEV ONLY).');
+        return true;
+      }
+      this.logger.error('WHATSAPP_APP_SECRET is not configured. Rejecting webhook in non-development environment.');
+      return false;
     }
 
     if (!signature) {

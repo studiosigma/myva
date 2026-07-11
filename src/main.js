@@ -117,6 +117,7 @@ class AppState {
           plan: user.plan || 'free',
           role: user.role || 'user',
           monthlyBudget: user.monthlyBudget || 0,
+          waVerified: user.waVerified || false,
         };
         this.save('profile', this.profile);
 
@@ -624,6 +625,12 @@ function initRouter() {
       el.classList.toggle('active', el.id === `view-${hash}`);
     });
 
+    // Reset scroll position on navigation
+    const viewContainer = document.getElementById('view-container');
+    if (viewContainer) {
+      viewContainer.scrollTop = 0;
+    }
+
     // Update Header title
     const headerTitle = document.getElementById('view-title');
     if (headerTitle) {
@@ -960,6 +967,17 @@ function renderDashboard() {
       greeting = 'Good Night';
     }
     greetingEl.textContent = `${greeting}, ${state.profile.username} 👋`;
+  }
+
+  // Update WhatsApp connection status badge
+  const waStatusBadge = document.getElementById('dash-wa-status-badge');
+  if (waStatusBadge) {
+    const isConnected = state.profile.waVerified;
+    waStatusBadge.className = `whatsapp-status-badge ${isConnected ? 'connected' : 'disconnected'}`;
+    waStatusBadge.innerHTML = `
+      <span class="status-dot"></span>
+      <span class="status-text">${isConnected ? 'WhatsApp Terhubung' : 'WhatsApp Terputus'}</span>
+    `;
   }
 
   const activeReminders = state.reminders.filter(r => !r.completed);
@@ -2848,8 +2866,31 @@ async function handleIntegrationConnect(key) {
     }, 800);
   }
 }
+// Setup mobile segmented tabs switching
+function initDashboardMobileTabs() {
+  const tabContainer = document.getElementById('dashboard-mobile-tabs');
+  if (!tabContainer) return;
+  
+  const buttons = tabContainer.querySelectorAll('.dash-tab-btn');
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tabName = btn.getAttribute('data-tab');
+      
+      // Update active button indicator class
+      buttons.forEach(b => b.classList.toggle('active', b === btn));
+      
+      // Toggle corresponding tab contents
+      const contents = document.querySelectorAll('#view-dashboard .dash-tab-content');
+      contents.forEach(content => {
+        content.classList.toggle('active', content.classList.contains(`dash-tab-${tabName}`));
+      });
+    });
+  });
+}
+
 // --- GLOBAL ATTACHMENTS & INTERRUPTS ---
 function initEventListeners() {
+  initDashboardMobileTabs();
   // --- Auth Listeners ---
   const formLoginEmail = document.getElementById('form-login-email');
   if (formLoginEmail) {
@@ -3210,7 +3251,9 @@ function initEventListeners() {
   document.querySelectorAll('.nav-item, .bottom-nav-item').forEach(el => {
     el.addEventListener('click', (e) => {
       const view = el.getAttribute('data-view');
-      window.location.hash = `#${view}`;
+      if (view) {
+        window.location.hash = `#${view}`;
+      }
     });
   });
 
@@ -4295,14 +4338,47 @@ function initEventListeners() {
     el.addEventListener('click', closeMobileNav);
   });
 
-  // Bottom-nav "Menu" item also opens the drawer (mobile discoverability)
-  const bottomNavMenu = document.getElementById('bottom-nav-menu');
-  if (bottomNavMenu && appLayout) {
-    bottomNavMenu.addEventListener('click', (e) => {
+  // Bottom-nav "Quick Add" item opens the Speed Dial menu
+  const bottomNavQuickAdd = document.getElementById('bottom-nav-quick-add');
+  const speedDialMenu = document.getElementById('speed-dial-menu');
+  if (bottomNavQuickAdd && speedDialMenu) {
+    bottomNavQuickAdd.addEventListener('click', (e) => {
       e.preventDefault();
-      appLayout.classList.toggle('nav-open');
+      speedDialMenu.classList.add('active');
     });
   }
+
+  // Speed Dial Close Listeners
+  const speedDialClose = document.getElementById('speed-dial-close');
+  if (speedDialClose && speedDialMenu) {
+    speedDialClose.addEventListener('click', () => {
+      speedDialMenu.classList.remove('active');
+    });
+  }
+  if (speedDialMenu) {
+    speedDialMenu.addEventListener('click', (e) => {
+      if (e.target === speedDialMenu) {
+        speedDialMenu.classList.remove('active');
+      }
+    });
+  }
+
+  // Speed Dial Actions binding to open corresponding modals after closing
+  const bindSpeedDialAction = (btnId, modalId) => {
+    const btn = document.getElementById(btnId);
+    const modal = document.getElementById(modalId);
+    if (btn && modal && speedDialMenu) {
+      btn.addEventListener('click', () => {
+        speedDialMenu.classList.remove('active');
+        setTimeout(() => {
+          modal.classList.add('active');
+        }, 150);
+      });
+    }
+  };
+  bindSpeedDialAction('speed-dial-add-memory', 'modal-memory');
+  bindSpeedDialAction('speed-dial-add-task', 'modal-task');
+  bindSpeedDialAction('speed-dial-add-reminder', 'modal-reminder');
 
   // Refresh Admin Payouts Button
   const btnRefreshAdmin = document.getElementById('btn-refresh-admin-payouts');
