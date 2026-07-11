@@ -3532,6 +3532,111 @@ input:checked + .slider:before {
 }
 
 /* ==========================================================================
+   MOBILE ENHANCEMENTS — added (drawer nav + polish)
+   ========================================================================== */
+.mobile-menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+.mobile-menu-btn:hover {
+  background-color: var(--primary-bg-light);
+  color: var(--text-primary);
+}
+
+.sidebar-scrim {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 150;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  /* Dynamic viewport height handles mobile browser chrome */
+  body, .app-layout, .main-layout {
+    height: 100dvh;
+  }
+
+  /* Swap desktop minimize toggle for a hamburger */
+  .sidebar-toggle-btn { display: none; }
+  .mobile-menu-btn { display: inline-flex; }
+
+  /* Sidebar becomes an off-canvas drawer */
+  .sidebar {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100dvh;
+    width: 280px;
+    max-width: 82vw;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 200;
+    box-shadow: var(--shadow-lg);
+  }
+  .sidebar.minimized { width: 280px; max-width: 82vw; }
+  /* Neutralize the minimized-collapse visuals inside the mobile drawer */
+  .sidebar.minimized .logo-text { display: flex; }
+  .sidebar.minimized .sidebar-nav a span { display: inline; }
+  .sidebar.minimized .user-info { display: flex; }
+  .sidebar.minimized .sidebar-header { padding: 24px; justify-content: flex-start; }
+  .sidebar.minimized .logo-container { gap: 12px; justify-content: flex-start; }
+  .sidebar.minimized .sidebar-nav { padding: 24px 16px; }
+  .sidebar.minimized .nav-item { justify-content: flex-start; padding: 10px 14px; gap: 12px; }
+  .sidebar.minimized .sidebar-footer { padding: 16px; justify-content: flex-start; }
+  .sidebar.minimized .user-profile { background-color: #F1F1EF; padding: 8px; justify-content: flex-start; }
+
+  .app-layout.nav-open .sidebar { transform: translateX(0); }
+  .app-layout.nav-open .sidebar-scrim { display: block; opacity: 1; }
+
+  /* Stop layout from overflowing horizontally (hero mockups, etc.) */
+  .app-layout { overflow-x: hidden; }
+  .landing-hero { overflow-x: hidden; }
+
+  /* Bottom nav respects iPhone safe-area; hidden on marketing landing */
+  .bottom-nav {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    height: calc(64px + env(safe-area-inset-bottom, 0));
+  }
+  .landing-active .bottom-nav { display: none; }
+
+  /* Prevent iOS auto-zoom when focusing inputs */
+  input, select, textarea, .form-input { font-size: 16px; }
+
+  /* Modals stay within the viewport on phones */
+  .modal-card { max-height: 90vh; overflow-y: auto; }
+
+  /* Landing top nav: collapse the link list, keep logo + CTA */
+  .landing-nav-links { display: none; }
+  .landing-nav-container { gap: 12px; }
+
+  /* Comfortable tap targets */
+  .nav-item, .bottom-nav-item { min-height: 44px; }
+}
+
+@media (max-width: 480px) {
+  .view-title { font-size: 18px; }
+  .app-header { padding: 0 12px; }
+  .content-body { padding: 12px; }
+  .header-search-container { gap: 8px; }
+  .sync-badge .sync-text { display: none; }
+}
+
+/* ==========================================================================
    WHATSAPP ASSISTANT SIMULATOR & TOASTS
    ========================================================================== */
 .sim-chat-bubble {
@@ -6406,6 +6511,126 @@ input:checked + .slider:before {
 /* Finance transaction table hover */
 .transaction-row:hover {
   background-color: rgba(15, 23, 42, 0.02) !important;
+}
+
+/* ==========================================================================
+   MOBILE POLISH (visual) — appended last so it wins over earlier media queries
+   ========================================================================== */
+
+/* Bottom navigation: clean frosted surface + clear active state */
+@media (max-width: 768px) {
+  .bottom-nav {
+    background-color: rgba(255, 255, 255, 0.92);
+    backdrop-filter: saturate(180%) blur(12px);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    box-shadow: 0 -1px 0 rgba(15, 23, 42, 0.06), 0 -6px 18px rgba(15, 23, 42, 0.05);
+    padding-top: 5px;
+  }
+  .bottom-nav-item {
+    padding: 6px 4px 9px;
+    border-radius: 14px;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
+  }
+  .bottom-nav-item:active {
+    background-color: var(--primary-bg-light);
+    transform: scale(0.95);
+  }
+  .bottom-nav-item.active {
+    color: var(--primary-color);
+    background-color: var(--primary-light);
+    font-weight: 700;
+  }
+  .bottom-nav-item.active .bottom-nav-icon {
+    transform: translateY(-1px);
+  }
+}
+
+/* Header gets a subtle frosted separation on mobile */
+@media (max-width: 768px) {
+  .app-header {
+    box-shadow: var(--shadow-sm);
+    background-color: rgba(255, 255, 255, 0.92);
+    backdrop-filter: saturate(180%) blur(12px);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+  }
+}
+
+/* Landing hero: tighter type + full-width stacked CTAs on phones */
+@media (max-width: 768px) {
+  .landing-hero-title {
+    font-size: 32px;
+    letter-spacing: -1px;
+  }
+  .landing-hero-desc {
+    font-size: 15px;
+  }
+  .landing-hero-actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .landing-btn-primary,
+  .landing-btn-secondary {
+    width: 100%;
+    text-align: center;
+  }
+}
+@media (max-width: 480px) {
+  .landing-hero-title {
+    font-size: 27px;
+  }
+  .landing-hero {
+    padding: 32px 16px;
+  }
+}
+
+/* Clean micro-interactions for touch */
+.btn:active,
+.btn-primary:active,
+.btn-outline:active {
+  transform: scale(0.97);
+}
+.card-hover-effect:active {
+  transform: scale(0.99);
+}
+
+/* Modals become bottom-sheets on small phones (native, clean feel) */
+@media (max-width: 480px) {
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+    background-color: rgba(15, 23, 42, 0.5);
+  }
+  .modal-card {
+    max-width: 100%;
+    width: 100%;
+    border-radius: 20px 20px 0 0;
+    border: none;
+    border-top: 1px solid var(--border-color);
+    max-height: 92vh;
+    animation: modalSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  @keyframes modalSlideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  .modal-header {
+    padding: 18px 20px;
+  }
+}
+
+/* Comfortable, easy-to-hit controls on phones */
+@media (max-width: 480px) {
+  .form-input,
+  .form-select,
+  select,
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  textarea,
+  .btn {
+    min-height: 44px;
+  }
 }
 
 

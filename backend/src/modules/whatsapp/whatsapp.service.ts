@@ -16,13 +16,13 @@ export class WhatsAppService {
   private readonly logger = new Logger(WhatsAppService.name);
 
   private async checkRateLimit(from: string): Promise<{ allowed: boolean; count: number }> {
-    const currentMinuteBucket = Math.floor(Date.now() / 60000);
-    const key = `rate_limit:${from}:${currentMinuteBucket}`;
+    // Single per-user key with a 60s TTL gives a true rolling (sliding)
+    // 10-messages-per-minute window instead of a per-calendar-minute bucket.
+    const key = `rate_limit:${from}`;
     try {
       const count = await this.cacheService.incr(key);
-      if (count === 1) {
-        await this.cacheService.set(key, '1', 60);
-      }
+      // Refresh TTL on every hit so the window slides with the user's activity.
+      await this.cacheService.set(key, String(count), 60);
       return {
         allowed: count <= 10,
         count,

@@ -12,15 +12,29 @@ import { GoogleApiService } from '../../integrations/google-api.service';
 import { google } from 'googleapis';
 import { ConfigService } from '@nestjs/config';
 import { S3Service } from '../../integrations/s3.service';
+import { CacheService } from '../cache/cache.service';
+
+interface PendingAction {
+  intent:
+    | 'CREATE_REMINDER'
+    | 'CREATE_CALENDAR_EVENT'
+    | 'CREATE_TASK'
+    | 'TRACK_EXPENSE'
+    | 'RESCHEDULE_EVENT'
+    | 'SET_BUDGET'
+    | 'EXPORT_EXPENSES';
+  extracted: any;
+  timestamp: number;
+}
 
 @Injectable()
 export class IntentRouterService {
   private readonly logger = new Logger(IntentRouterService.name);
-  private pendingActions = new Map<string, {
-    intent: 'CREATE_REMINDER' | 'CREATE_CALENDAR_EVENT' | 'CREATE_TASK' | 'TRACK_EXPENSE' | 'RESCHEDULE_EVENT' | 'SET_BUDGET' | 'EXPORT_EXPENSES';
-    extracted: any;
-    timestamp: number;
-  }>();
+  private static readonly PENDING_ACTION_TTL_SECONDS = 5 * 60;
+
+  private pendingActionKey(userId: string): string {
+    return `pending_action:${userId}`;
+  }
 
   constructor(
     private readonly memoryService: MemoryService,
@@ -33,6 +47,7 @@ export class IntentRouterService {
     private readonly googleApiService: GoogleApiService,
     private readonly configService: ConfigService,
     private readonly s3Service: S3Service,
+    private readonly cacheService: CacheService,
   ) {}
 
   async routeMessage(userId: string, text: string, persona?: string): Promise<string> {
@@ -41,16 +56,16 @@ export class IntentRouterService {
 
     // Check for pending actions first
     const now = Date.now();
-    const pending = this.pendingActions.get(userId);
+    const pending = await this.getPendingAction(userId);
     if (pending && (now - pending.timestamp < 5 * 60 * 1000)) {
       if (/(batal|cancel|tidak jadi|gak jadi)/i.test(cleanText)) {
-        this.pendingActions.delete(userId);
+        await this.clearPendingAction(userId);
         if (pending.intent === 'RESCHEDULE_EVENT') {
           return `❌ Penjadwalan ulang acara telah dibatalkan. Acara tetap pada waktu semula.`;
         }
         return `❌ Pembuatan ${pending.intent === 'TRACK_EXPENSE' ? 'catatan pengeluaran' : 'pengingat/agenda'} telah dibatalkan.`;
       }
-      this.pendingActions.delete(userId);
+      await this.clearPendingAction(userId);
       return this.resolvePendingAction(userId, text, pending);
     }
 
@@ -130,7 +145,7 @@ export class IntentRouterService {
       if (intent === 'CREATE_REMINDER') {
         const title = extracted?.title || text;
         if (!extracted?.scheduledAt) {
-          this.pendingActions.set(userId, {
+          await this.setPendingAction(userId, {
             intent: 'CREATE_REMINDER',
             extracted: {
               title: title || 'WhatsApp Reminder',
@@ -146,7 +161,7 @@ export class IntentRouterService {
           return question;
         }
 
-        const scheduledAt = new Date(`${extracted.scheduledAt}+07:00`);
+        const scheduledAt = this.parseScheduledAt(extracted.scheduledAt);
         const isGcalConnected = user?.gcalConnected || false;
         const reminder = await this.reminderService.create(userId, {
           title: title || 'WhatsApp Reminder',
@@ -199,7 +214,7 @@ export class IntentRouterService {
         const isMeeting = extracted?.isMeeting || false;
 
         if (!extracted?.scheduledAt) {
-          this.pendingActions.set(userId, {
+          await this.setPendingAction(userId, {
             intent: 'CREATE_CALENDAR_EVENT',
             extracted: {
               title: title || 'Acara Kalender',
@@ -216,7 +231,7 @@ export class IntentRouterService {
           return question;
         }
 
-        const scheduledAt = new Date(`${extracted.scheduledAt}+07:00`);
+        const scheduledAt = this.parseScheduledAt(extracted.scheduledAt);
         const reminder = await this.reminderService.create(userId, {
           title: `[Calendar] ${title || 'Acara Kalender'}`,
           scheduledAt: scheduledAt.toISOString(),
@@ -284,7 +299,7 @@ export class IntentRouterService {
         );
 
         if (conflictCheck.hasConflict) {
-          this.pendingActions.set(userId, {
+          await this.setPendingAction(userId, {
             intent: 'RESCHEDULE_EVENT',
             extracted: {
               reminderId: reminder.id,
@@ -360,7 +375,7 @@ export class IntentRouterService {
           const category = extracted?.category || 'Other';
 
           if (amount <= 0) {
-            this.pendingActions.set(userId, {
+            await this.setPendingAction(userId, {
               intent: 'TRACK_EXPENSE',
               extracted: {
                 description,
@@ -464,7 +479,7 @@ export class IntentRouterService {
         });
 
         const backendUrl = this.configService.get<string>('BACKEND_URL') || 'http://localhost:3000';
-        const downloadUrl = `${backendUrl}/public/file/download/${fileRecord.id}`;
+        const downloadUrl = `${backendUrl}/api/public/file/download/${fileRecord.id}`;
 
         return `📊 *Ekspor Data Keuangan Berhasil!*\n\nSaya telah merangkum seluruh catatan pengeluaran Anda ke dalam file CSV.\n\n📥 *Link Download File*:\n${downloadUrl}\n\n_File ini juga telah disimpan dengan aman di Files Vault Anda._`;
       }
@@ -477,7 +492,7 @@ export class IntentRouterService {
         const amount = extracted?.amount || 0;
 
         if (amount <= 0) {
-          this.pendingActions.set(userId, {
+          await this.setPendingAction(userId, {
             intent: 'SET_BUDGET',
             extracted: {},
             timestamp: Date.now(),
@@ -1057,7 +1072,7 @@ Instruksi: Gunakan data keuangan di atas untuk menjawab pertanyaan pengguna deng
         return `Format waktu tidak dipahami. Batal membuat pengingat. Silakan coba lagi dengan format yang lebih jelas.`;
       }
       
-      const scheduledAt = new Date(`${scheduledAtStr}+07:00`);
+      const scheduledAt = this.parseScheduledAt(scheduledAtStr);
       const isGcalConnected = user?.gcalConnected || false;
       
       const reminder = await this.reminderService.create(userId, {
@@ -1094,7 +1109,7 @@ Instruksi: Gunakan data keuangan di atas untuk menjawab pertanyaan pengguna deng
         return `Format waktu tidak dipahami. Batal membuat agenda kalender. Silakan coba lagi dengan format yang lebih jelas.`;
       }
       
-      const scheduledAt = new Date(`${scheduledAtStr}+07:00`);
+      const scheduledAt = this.parseScheduledAt(scheduledAtStr);
       const isGcalConnected = user?.gcalConnected || false;
       const isMeeting = pending.extracted.isMeeting || false;
 
@@ -1147,7 +1162,7 @@ Instruksi: Gunakan data keuangan di atas untuk menjawab pertanyaan pengguna deng
       );
 
       if (conflictCheck.hasConflict) {
-        this.pendingActions.set(userId, {
+        await this.setPendingAction(userId, {
           intent: 'RESCHEDULE_EVENT',
           extracted: {
             reminderId: reminder.id,
@@ -1178,7 +1193,7 @@ Instruksi: Gunakan data keuangan di atas untuk menjawab pertanyaan pengguna deng
         return `Format waktu tidak dipahami. Batal menggeser jadwal acara. Silakan coba lagi dengan format yang lebih jelas (contoh: "geser ke jam 3 sore").`;
       }
 
-      const newScheduledAt = new Date(`${scheduledAtStr}+07:00`);
+      const newScheduledAt = this.parseScheduledAt(scheduledAtStr);
 
       // Update local reminder
       if (pending.extracted.reminderId) {
@@ -1282,6 +1297,50 @@ Instruksi: Gunakan data keuangan di atas untuk menjawab pertanyaan pengguna deng
     }
 
     return `Maaf, instruksi sebelumnya tidak bisa dilanjutkan.`;
+  }
+
+  private parseScheduledAt(raw: string): Date {
+    // Guard against double timezones: only append +07:00 if the model
+    // didn't already return an offset / UTC marker.
+    const iso = raw.includes('+') || raw.endsWith('Z') ? raw : `${raw}+07:00`;
+    return new Date(iso);
+  }
+
+  private async getPendingAction(userId: string): Promise<PendingAction | null> {
+    try {
+      const raw = await this.cacheService.get(this.pendingActionKey(userId));
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as PendingAction;
+      // Redis TTL already expires stale entries; this is a defensive double-check
+      // that preserves the previous 5-minute recency behaviour.
+      if (Date.now() - parsed.timestamp > IntentRouterService.PENDING_ACTION_TTL_SECONDS * 1000) {
+        await this.clearPendingAction(userId);
+        return null;
+      }
+      return parsed;
+    } catch {
+      return null;
+    }
+  }
+
+  private async setPendingAction(userId: string, action: PendingAction): Promise<void> {
+    try {
+      await this.cacheService.set(
+        this.pendingActionKey(userId),
+        JSON.stringify(action),
+        IntentRouterService.PENDING_ACTION_TTL_SECONDS,
+      );
+    } catch {
+      // best-effort: ignore Redis errors so the main flow is never blocked
+    }
+  }
+
+  private async clearPendingAction(userId: string): Promise<void> {
+    try {
+      await this.cacheService.del(this.pendingActionKey(userId));
+    } catch {
+      // ignore
+    }
   }
 
   private getHelpGuide(): string {

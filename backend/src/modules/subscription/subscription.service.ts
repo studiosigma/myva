@@ -55,7 +55,7 @@ export class SubscriptionService {
       productDetails: `Langganan MyVA Paket ${plan.toUpperCase()}`,
       email: user.email,
       phoneNumber: user.waNumber || '08212117810',
-      callbackUrl: `${backendUrl}/subscription/webhook`,
+      callbackUrl: `${backendUrl}/api/subscription/webhook`,
       returnUrl: `${appUrl}/#settings`,
       signature,
     };

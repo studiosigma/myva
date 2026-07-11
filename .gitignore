@@ -29,4 +29,7 @@ backend/.env.*
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?
+*.sln?
+
+# Runtime uploads (vault, user files)
+backend/uploads/

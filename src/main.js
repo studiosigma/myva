@@ -599,6 +599,10 @@ function initRouter() {
       appEl.classList.toggle('login-active', hash === 'login' || hash === 'signup');
     }
 
+    // Close mobile drawer on any navigation
+    const _appLayout = document.querySelector('.app-layout');
+    if (_appLayout) _appLayout.classList.remove('nav-open');
+
     // Toggle nav active classes (sidebar)
     document.querySelectorAll('.nav-item').forEach(el => {
       el.classList.toggle('active', el.getAttribute('data-view') === hash);
@@ -4267,6 +4271,36 @@ function initEventListeners() {
       sidebar.classList.toggle('minimized');
       toggleBtn.classList.toggle('minimized');
       localStorage.setItem('sidebar-minimized', sidebar.classList.contains('minimized'));
+    });
+  }
+
+  // Mobile drawer navigation (hamburger -> slide-in sidebar)
+  const appLayout = document.querySelector('.app-layout');
+  const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+  const sidebarScrim = document.getElementById('sidebar-scrim');
+  const closeMobileNav = () => { if (appLayout) appLayout.classList.remove('nav-open'); };
+  if (appLayout && mobileMenuBtn) {
+    mobileMenuBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      appLayout.classList.toggle('nav-open');
+    });
+  }
+  if (sidebarScrim) {
+    sidebarScrim.addEventListener('click', closeMobileNav);
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeMobileNav();
+  });
+  document.querySelectorAll('.sidebar .nav-item').forEach((el) => {
+    el.addEventListener('click', closeMobileNav);
+  });
+
+  // Bottom-nav "Menu" item also opens the drawer (mobile discoverability)
+  const bottomNavMenu = document.getElementById('bottom-nav-menu');
+  if (bottomNavMenu && appLayout) {
+    bottomNavMenu.addEventListener('click', (e) => {
+      e.preventDefault();
+      appLayout.classList.toggle('nav-open');
     });
   }
 
