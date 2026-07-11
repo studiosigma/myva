@@ -14,7 +14,7 @@ export class SendBroadcastDto {
   @IsEnum(['whatsapp', 'email', 'both'])
   channel: 'whatsapp' | 'email' | 'both';
 
-  @ApiProperty({ example: 'all', enum: ['all', 'free', 'pro'] })
-  @IsEnum(['all', 'free', 'pro'])
-  audience: 'all' | 'free' | 'pro';
+  @ApiProperty({ example: 'all', enum: ['all', 'free', 'basic', 'pro'] })
+  @IsEnum(['all', 'free', 'basic', 'pro'])
+  audience: 'all' | 'free' | 'basic' | 'pro';
 }

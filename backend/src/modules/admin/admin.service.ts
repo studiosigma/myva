@@ -91,12 +91,16 @@ export class AdminService {
       where: { status: 'active' },
     });
 
-    const paidUsers = await this.prisma.user.count({
+    const basicUsers = await this.prisma.user.count({
+      where: { plan: 'basic' },
+    });
+    const proUsers = await this.prisma.user.count({
       where: { plan: 'pro' },
     });
+    const paidUsers = basicUsers + proUsers;
 
-    // Pro subscription is Rp 49,000 / month
-    const mrr = paidUsers * 49000;
+    // Basic = Rp 25,000/mo, Pro = Rp 49,000/mo
+    const mrr = basicUsers * 25000 + proUsers * 49000;
 
     // AI Cost: sum of cost in usage log
     const aiCostResult = await this.prisma.usageLog.aggregate({
@@ -828,9 +832,13 @@ export class AdminService {
     }
 
     const totalUsers = await this.prisma.user.count();
-    const paidUsers = await this.prisma.user.count({
+    const basicUsers = await this.prisma.user.count({
+      where: { plan: 'basic' },
+    });
+    const proUsers = await this.prisma.user.count({
       where: { plan: 'pro' },
     });
+    const paidUsers = basicUsers + proUsers;
     const totalMessages = await this.prisma.usageLog.count({
       where: { actionType: 'WHATSAPP_MESSAGE' },
     });

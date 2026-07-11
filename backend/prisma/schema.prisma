@@ -15,7 +15,7 @@ model User {
   name         String?
   avatar       String?
   waNumber     String?  @unique @map("wa_number")
-  plan         String   @default("free") // free, pro
+  plan         String   @default("free") // free, basic, pro
   status       String   @default("active") // active, suspended
   role         String   @default("user") // user, admin
   persona      String   @default("professional") // friendly, professional, islamic, business_partner, grumpy_boss, romantic_partner
